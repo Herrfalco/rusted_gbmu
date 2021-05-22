@@ -1,5 +1,6 @@
 mod mem;
 mod ops;
+mod ops_impl;
 mod reg;
 
 use mem::*;
