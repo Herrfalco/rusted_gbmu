@@ -72,11 +72,11 @@ pub fn ld_r_arrd(m: My, r: MR, rr: MRR) {
 
 pub fn ld_pass() {}
 
-pub fn ld_to_U(rr: MRR) {
+pub fn ld_to_u(rr: MRR) {
     srr(rr, (grr(rr) & 0xff) | (grr(rr) << 8));
 }
 
-pub fn ld_to_D(rr: MRR) {
+pub fn ld_to_d(rr: MRR) {
     srr(rr, (grr(rr) & 0xff00) | (grr(rr) >> 8));
 }
 

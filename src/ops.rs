@@ -32,6 +32,7 @@ impl Ops {
     pub fn new() -> Ops {
         let mut ops: Vec<Option<Op>> = (0..0x100).map(|_| None).collect();
 
+        ///////////////////////// 8 BITS LOADS ///////////////////////////
         ops[0x02] = Some(Op::new("LD (BC), A", 1, 8, |_r, _m, _p| {
             ld_arr_r(_m, &mut _r.bc, (&_r.af, U));
         }));
@@ -42,7 +43,7 @@ impl Ops {
             ld_arri_r(_m, &mut _r.hl, (&_r.af, U));
         }));
         ops[0x32] = Some(Op::new("LD (HL-), A", 1, 8, |_r, _m, _p| {
-            ld_arri_r(_m, &mut _r.hl, (&_r.af, U));
+            ld_arrd_r(_m, &mut _r.hl, (&_r.af, U));
         }));
 
         ops[0x06] = Some(Op::new("LD B, #", 2, 8, |_r, _m, _p| {
@@ -88,7 +89,7 @@ impl Ops {
             ld_pass();
         }));
         ops[0x41] = Some(Op::new("LD B, C", 1, 4, |_r, _m, _p| {
-            ld_to_U(&mut _r.bc);
+            ld_to_u(&mut _r.bc);
         }));
         ops[0x42] = Some(Op::new("LD B, D", 1, 4, |_r, _m, _p| {
             ld_r_r((&mut _r.bc, U), (&_r.de, U));
@@ -110,7 +111,7 @@ impl Ops {
         }));
 
         ops[0x48] = Some(Op::new("LD C, B", 1, 4, |_r, _m, _p| {
-            ld_to_D(&mut _r.bc);
+            ld_to_d(&mut _r.bc);
         }));
         ops[0x49] = Some(Op::new("LD C, C", 1, 4, |_r, _m, _p| {
             ld_pass();
@@ -144,7 +145,7 @@ impl Ops {
             ld_pass();
         }));
         ops[0x53] = Some(Op::new("LD D, E", 1, 4, |_r, _m, _p| {
-            ld_to_U(&mut _r.de);
+            ld_to_u(&mut _r.de);
         }));
         ops[0x54] = Some(Op::new("LD D, H", 1, 4, |_r, _m, _p| {
             ld_r_r((&mut _r.de, U), (&_r.hl, U));
@@ -166,7 +167,7 @@ impl Ops {
             ld_r_r((&mut _r.de, D), (&_r.bc, D));
         }));
         ops[0x5a] = Some(Op::new("LD E, D", 1, 4, |_r, _m, _p| {
-            ld_to_D(&mut _r.de);
+            ld_to_d(&mut _r.de);
         }));
         ops[0x5b] = Some(Op::new("LD E, E", 1, 4, |_r, _m, _p| {
             ld_pass();
@@ -200,7 +201,7 @@ impl Ops {
             ld_pass();
         }));
         ops[0x65] = Some(Op::new("LD H, L", 1, 4, |_r, _m, _p| {
-            ld_to_U(&mut _r.hl);
+            ld_to_u(&mut _r.hl);
         }));
         ops[0x66] = Some(Op::new("LD H, (HL)", 1, 8, |_r, _m, _p| {
             let tmp = grr(&_r.hl);
@@ -223,7 +224,7 @@ impl Ops {
             ld_r_r((&mut _r.hl, D), (&_r.de, D));
         }));
         ops[0x6c] = Some(Op::new("LD L, H", 1, 4, |_r, _m, _p| {
-            ld_to_D(&mut _r.hl);
+            ld_to_d(&mut _r.hl);
         }));
         ops[0x6d] = Some(Op::new("LD L, L", 1, 4, |_r, _m, _p| {
             ld_pass();
@@ -283,6 +284,47 @@ impl Ops {
             ld_pass();
         }));
 
+        ops[0xe0] = Some(Op::new("LDH (#), A", 2, 12, |_r, _m, _p| {
+            ldh_an_r(_m, _p as u8, (&_r.af, U));
+        }));
+        ops[0xf0] = Some(Op::new("LDH A, (#)", 2, 12, |_r, _m, _p| {
+            ldh_r_an(_m, (&mut _r.af, U), _p as u8);
+        }));
+
+        ops[0xe2] = Some(Op::new("LDH (C), A", 2, 8, |_r, _m, _p| {
+            ldh_ar_r(_m, (&_r.bc, D), (&_r.af, U));
+        }));
+        ops[0xf2] = Some(Op::new("LDH A, (C)", 2, 8, |_r, _m, _p| {
+            ldh_r_ar(_m, (&mut _r.af, U), (&_r.bc, D));
+        }));
+
+        ops[0xea] = Some(Op::new("LD (#), A", 3, 16, |_r, _m, _p| {
+            ld_ann_r(_m, _p, (&_r.af, U));
+        }));
+        ops[0xfa] = Some(Op::new("LD A, (#)", 3, 16, |_r, _m, _p| {
+            ld_r_ann(_m, (&mut _r.af, U), _p);
+        }));
+
+        //////////////////////// 16 BITS LOADS ///////////////////////////
+
+        ops[0x01] = Some(Op::new("LD BC, (#)", 3, 12, |_r, _m, _p| {
+            ld_rr_nn(&mut _r.bc, _p);
+        }));
+        ops[0x11] = Some(Op::new("LD DE, (#)", 3, 12, |_r, _m, _p| {
+            ld_rr_nn(&mut _r.de, _p);
+        }));
+        ops[0x21] = Some(Op::new("LD HL, (#)", 3, 12, |_r, _m, _p| {
+            ld_rr_nn(&mut _r.hl, _p);
+        }));
+        ops[0x31] = Some(Op::new("LD SP, (#)", 3, 12, |_r, _m, _p| {
+            ld_rr_nn(&mut _r.sp, _p);
+        }));
+
+        /*
+        ops[0x08] = Some(Op::new("LD (#), SP", 3, 20, |_r, _m, _p| {
+            ld_ann_rr(_m, _p, &_r.sp);
+        }));
+        */
         Ops(ops)
     }
 
