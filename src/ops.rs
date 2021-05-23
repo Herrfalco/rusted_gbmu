@@ -34,10 +34,10 @@ impl Ops {
 
         ///////////////////////// 8 BITS LOADS ///////////////////////////
         ops[0x02] = Some(Op::new("LD (BC), A", 1, 8, |_r, _m, _p| {
-            ld_arr_r(_m, &mut _r.bc, (&_r.af, U));
+            ld_arr_n(_m, &mut _r.bc, gr((&_r.af, U)));
         }));
         ops[0x12] = Some(Op::new("LD (DE), A", 1, 8, |_r, _m, _p| {
-            ld_arr_r(_m, &mut _r.de, (&_r.af, U));
+            ld_arr_n(_m, &mut _r.de, gr((&_r.af, U)));
         }));
         ops[0x22] = Some(Op::new("LD (HL+), A", 1, 8, |_r, _m, _p| {
             ld_arri_r(_m, &mut _r.hl, (&_r.af, U));
@@ -60,10 +60,10 @@ impl Ops {
         }));
 
         ops[0x0a] = Some(Op::new("LD A, (BC)", 1, 8, |_r, _m, _p| {
-            ld_r_arr(_m, (&mut _r.af, U), &_r.bc);
+            ld_r_ann(_m, (&mut _r.af, U), grr(&_r.bc));
         }));
         ops[0x1a] = Some(Op::new("LD A, (DE)", 1, 8, |_r, _m, _p| {
-            ld_r_arr(_m, (&mut _r.af, U), &_r.de);
+            ld_r_ann(_m, (&mut _r.af, U), grr(&_r.de));
         }));
         ops[0x2a] = Some(Op::new("LD A, (HL+)", 1, 8, |_r, _m, _p| {
             ld_r_arri(_m, (&mut _r.af, U), &mut _r.hl);
@@ -91,22 +91,22 @@ impl Ops {
             ld_r_n((&mut _r.bc, U), tmp);
         }));
         ops[0x42] = Some(Op::new("LD B, D", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.bc, U), (&_r.de, U));
+            ld_r_n((&mut _r.bc, U), gr((&_r.de, U)));
         }));
         ops[0x43] = Some(Op::new("LD B, E", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.bc, U), (&_r.de, D));
+            ld_r_n((&mut _r.bc, U), gr((&_r.de, D)));
         }));
         ops[0x44] = Some(Op::new("LD B, H", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.bc, U), (&_r.hl, U));
+            ld_r_n((&mut _r.bc, U), gr((&_r.hl, U)));
         }));
         ops[0x45] = Some(Op::new("LD B, L", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.bc, U), (&_r.hl, D));
+            ld_r_n((&mut _r.bc, U), gr((&_r.hl, D)));
         }));
         ops[0x46] = Some(Op::new("LD B, (HL)", 1, 8, |_r, _m, _p| {
-            ld_r_arr(_m, (&mut _r.bc, U), &_r.hl);
+            ld_r_ann(_m, (&mut _r.bc, U), grr(&_r.hl));
         }));
         ops[0x47] = Some(Op::new("LD B, A", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.bc, U), (&_r.af, U));
+            ld_r_n((&mut _r.bc, U), gr((&_r.af, U)));
         }));
 
         ops[0x48] = Some(Op::new("LD C, B", 1, 4, |_r, _m, _p| {
@@ -115,29 +115,29 @@ impl Ops {
         }));
         ops[0x49] = Some(Op::new("LD C, C", 1, 4, |_r, _m, _p| {}));
         ops[0x4a] = Some(Op::new("LD C, D", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.bc, D), (&_r.de, U));
+            ld_r_n((&mut _r.bc, D), gr((&_r.de, U)));
         }));
         ops[0x4b] = Some(Op::new("LD C, E", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.bc, D), (&_r.de, D));
+            ld_r_n((&mut _r.bc, D), gr((&_r.de, D)));
         }));
         ops[0x4c] = Some(Op::new("LD C, H", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.bc, D), (&_r.hl, U));
+            ld_r_n((&mut _r.bc, D), gr((&_r.hl, U)));
         }));
         ops[0x4d] = Some(Op::new("LD C, L", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.bc, D), (&_r.hl, D));
+            ld_r_n((&mut _r.bc, D), gr((&_r.hl, D)));
         }));
         ops[0x4e] = Some(Op::new("LD C, (HL)", 1, 8, |_r, _m, _p| {
-            ld_r_arr(_m, (&mut _r.bc, D), &_r.hl);
+            ld_r_ann(_m, (&mut _r.bc, D), grr(&_r.hl));
         }));
         ops[0x4f] = Some(Op::new("LD C, A", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.bc, D), (&_r.af, U));
+            ld_r_n((&mut _r.bc, D), gr((&_r.af, U)));
         }));
 
         ops[0x50] = Some(Op::new("LD D, B", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.de, U), (&_r.bc, U));
+            ld_r_n((&mut _r.de, U), gr((&_r.bc, U)));
         }));
         ops[0x51] = Some(Op::new("LD D, C", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.de, U), (&_r.bc, D));
+            ld_r_n((&mut _r.de, U), gr((&_r.bc, D)));
         }));
         ops[0x52] = Some(Op::new("LD D, D", 1, 4, |_r, _m, _p| {}));
         ops[0x53] = Some(Op::new("LD D, E", 1, 4, |_r, _m, _p| {
@@ -145,23 +145,23 @@ impl Ops {
             ld_r_n((&mut _r.de, U), tmp);
         }));
         ops[0x54] = Some(Op::new("LD D, H", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.de, U), (&_r.hl, U));
+            ld_r_n((&mut _r.de, U), gr((&_r.hl, U)));
         }));
         ops[0x55] = Some(Op::new("LD D, L", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.de, U), (&_r.hl, D));
+            ld_r_n((&mut _r.de, U), gr((&_r.hl, D)));
         }));
         ops[0x56] = Some(Op::new("LD D, (HL)", 1, 8, |_r, _m, _p| {
-            ld_r_arr(_m, (&mut _r.de, U), &_r.hl);
+            ld_r_ann(_m, (&mut _r.de, U), grr(&_r.hl));
         }));
         ops[0x57] = Some(Op::new("LD D, A", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.de, U), (&_r.af, U));
+            ld_r_n((&mut _r.de, U), gr((&_r.af, U)));
         }));
 
         ops[0x58] = Some(Op::new("LD E, B", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.de, D), (&_r.bc, U));
+            ld_r_n((&mut _r.de, D), gr((&_r.bc, U)));
         }));
         ops[0x59] = Some(Op::new("LD E, C", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.de, D), (&_r.bc, D));
+            ld_r_n((&mut _r.de, D), gr((&_r.bc, D)));
         }));
         ops[0x5a] = Some(Op::new("LD E, D", 1, 4, |_r, _m, _p| {
             let tmp = gr((&_r.de, U));
@@ -169,29 +169,29 @@ impl Ops {
         }));
         ops[0x5b] = Some(Op::new("LD E, E", 1, 4, |_r, _m, _p| {}));
         ops[0x5c] = Some(Op::new("LD E, H", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.de, D), (&_r.hl, U));
+            ld_r_n((&mut _r.de, D), gr((&_r.hl, U)));
         }));
         ops[0x5d] = Some(Op::new("LD E, L", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.de, D), (&_r.hl, D));
+            ld_r_n((&mut _r.de, D), gr((&_r.hl, D)));
         }));
         ops[0x5e] = Some(Op::new("LD E, (HL)", 1, 8, |_r, _m, _p| {
-            ld_r_arr(_m, (&mut _r.de, D), &_r.hl);
+            ld_r_ann(_m, (&mut _r.de, D), grr(&_r.hl));
         }));
         ops[0x5f] = Some(Op::new("LD E, A", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.de, D), (&_r.af, U));
+            ld_r_n((&mut _r.de, D), gr((&_r.af, U)));
         }));
 
         ops[0x60] = Some(Op::new("LD H, B", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.hl, U), (&_r.bc, U));
+            ld_r_n((&mut _r.hl, U), gr((&_r.bc, U)));
         }));
         ops[0x61] = Some(Op::new("LD H, C", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.hl, U), (&_r.bc, D));
+            ld_r_n((&mut _r.hl, U), gr((&_r.bc, D)));
         }));
         ops[0x62] = Some(Op::new("LD H, D", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.hl, U), (&_r.de, U));
+            ld_r_n((&mut _r.hl, U), gr((&_r.de, U)));
         }));
         ops[0x63] = Some(Op::new("LD H, E", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.hl, U), (&_r.de, D));
+            ld_r_n((&mut _r.hl, U), gr((&_r.de, D)));
         }));
         ops[0x64] = Some(Op::new("LD H, H", 1, 4, |_r, _m, _p| {}));
         ops[0x65] = Some(Op::new("LD H, L", 1, 4, |_r, _m, _p| {
@@ -203,20 +203,20 @@ impl Ops {
             ld_r_ann(_m, (&mut _r.hl, U), tmp);
         }));
         ops[0x67] = Some(Op::new("LD H, A", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.hl, U), (&_r.af, U));
+            ld_r_n((&mut _r.hl, U), gr((&_r.af, U)));
         }));
 
         ops[0x68] = Some(Op::new("LD L, B", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.hl, D), (&_r.bc, U));
+            ld_r_n((&mut _r.hl, D), gr((&_r.bc, U)));
         }));
         ops[0x69] = Some(Op::new("LD L, C", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.hl, D), (&_r.bc, D));
+            ld_r_n((&mut _r.hl, D), gr((&_r.bc, D)));
         }));
         ops[0x6a] = Some(Op::new("LD L, D", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.hl, D), (&_r.de, U));
+            ld_r_n((&mut _r.hl, D), gr((&_r.de, U)));
         }));
         ops[0x6b] = Some(Op::new("LD L, E", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.hl, D), (&_r.de, D));
+            ld_r_n((&mut _r.hl, D), gr((&_r.de, D)));
         }));
         ops[0x6c] = Some(Op::new("LD L, H", 1, 4, |_r, _m, _p| {
             let tmp = gr((&_r.hl, U));
@@ -228,51 +228,51 @@ impl Ops {
             ld_r_ann(_m, (&mut _r.hl, D), tmp);
         }));
         ops[0x6f] = Some(Op::new("LD L, A", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.hl, D), (&_r.af, U));
+            ld_r_n((&mut _r.hl, D), gr((&_r.af, U)));
         }));
 
         ops[0x70] = Some(Op::new("LD (HL), B", 1, 8, |_r, _m, _p| {
-            ld_arr_r(_m, &_r.hl, (&_r.bc, U));
+            ld_arr_n(_m, &_r.hl, gr((&_r.bc, U)));
         }));
         ops[0x71] = Some(Op::new("LD (HL), C", 1, 8, |_r, _m, _p| {
-            ld_arr_r(_m, &_r.hl, (&_r.bc, D));
+            ld_arr_n(_m, &_r.hl, gr((&_r.bc, D)));
         }));
         ops[0x72] = Some(Op::new("LD (HL), D", 1, 8, |_r, _m, _p| {
-            ld_arr_r(_m, &_r.hl, (&_r.de, U));
+            ld_arr_n(_m, &_r.hl, gr((&_r.de, U)));
         }));
         ops[0x73] = Some(Op::new("LD (HL), E", 1, 8, |_r, _m, _p| {
-            ld_arr_r(_m, &_r.hl, (&_r.de, D));
+            ld_arr_n(_m, &_r.hl, gr((&_r.de, D)));
         }));
         ops[0x74] = Some(Op::new("LD (HL), H", 1, 8, |_r, _m, _p| {
-            ld_arr_r(_m, &_r.hl, (&_r.hl, U));
+            ld_arr_n(_m, &_r.hl, gr((&_r.hl, U)));
         }));
         ops[0x75] = Some(Op::new("LD (HL), L", 1, 8, |_r, _m, _p| {
-            ld_arr_r(_m, &_r.hl, (&_r.hl, D));
+            ld_arr_n(_m, &_r.hl, gr((&_r.hl, D)));
         }));
         ops[0x77] = Some(Op::new("LD (HL), A", 1, 8, |_r, _m, _p| {
-            ld_arr_r(_m, &_r.hl, (&_r.af, U));
+            ld_arr_n(_m, &_r.hl, gr((&_r.af, U)));
         }));
 
         ops[0x78] = Some(Op::new("LD A, B", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.af, U), (&_r.bc, U));
+            ld_r_n((&mut _r.af, U), gr((&_r.bc, U)));
         }));
         ops[0x79] = Some(Op::new("LD A, C", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.af, U), (&_r.bc, D));
+            ld_r_n((&mut _r.af, U), gr((&_r.bc, D)));
         }));
         ops[0x7a] = Some(Op::new("LD A, D", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.af, U), (&_r.de, U));
+            ld_r_n((&mut _r.af, U), gr((&_r.de, U)));
         }));
         ops[0x7b] = Some(Op::new("LD A, E", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.af, U), (&_r.de, D));
+            ld_r_n((&mut _r.af, U), gr((&_r.de, D)));
         }));
         ops[0x7c] = Some(Op::new("LD A, H", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.af, U), (&_r.hl, U));
+            ld_r_n((&mut _r.af, U), gr((&_r.hl, U)));
         }));
         ops[0x7d] = Some(Op::new("LD A, L", 1, 4, |_r, _m, _p| {
-            ld_r_r((&mut _r.af, U), (&_r.hl, D));
+            ld_r_n((&mut _r.af, U), gr((&_r.hl, D)));
         }));
         ops[0x7e] = Some(Op::new("LD A, (HL)", 1, 8, |_r, _m, _p| {
-            ld_r_arr(_m, (&mut _r.af, U), &_r.hl);
+            ld_r_ann(_m, (&mut _r.af, U), grr(&_r.hl));
         }));
         ops[0x7f] = Some(Op::new("LD A, A", 1, 4, |_r, _m, _p| {}));
 
@@ -287,7 +287,7 @@ impl Ops {
             ldh_ar_r(_m, (&_r.bc, D), (&_r.af, U));
         }));
         ops[0xf2] = Some(Op::new("LDH A, (C)", 2, 8, |_r, _m, _p| {
-            ldh_r_ar(_m, (&mut _r.af, U), (&_r.bc, D));
+            ldh_r_an(_m, (&mut _r.af, U), gr((&_r.bc, D)));
         }));
 
         ops[0xea] = Some(Op::new("LD (#), A", 3, 16, |_r, _m, _p| {
@@ -319,7 +319,7 @@ impl Ops {
             ld_rr_rrpsn(&mut _r.af, &mut _r.hl, &_r.sp, _p as i8);
         }));
         ops[0xf9] = Some(Op::new("LD SP, HL", 1, 8, |_r, _m, _p| {
-            ld_rr_rr(&mut _r.sp, &_r.hl);
+            ld_rr_nn(&mut _r.sp, grr(&_r.hl));
         }));
 
         ops[0xc1] = Some(Op::new("POP BC", 1, 12, |_r, _m, _p| {
