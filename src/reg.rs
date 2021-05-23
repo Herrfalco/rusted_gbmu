@@ -67,7 +67,7 @@ impl Regs {
     }
 }
 
-pub mod API {
+pub mod api {
     use super::*;
 
     pub const Z: u16 = 0x80;
@@ -112,7 +112,7 @@ pub mod API {
 
 #[cfg(test)]
 mod tests {
-    use super::API::*;
+    use super::api::*;
     use super::*;
 
     #[test]

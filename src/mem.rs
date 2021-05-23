@@ -36,7 +36,7 @@ impl Mem {
     }
 }
 
-pub type Mmy<'a> = &'a mut Mem;
+pub type MMy<'a> = &'a mut Mem;
 pub type My<'a> = &'a Mem;
 
 #[cfg(test)]

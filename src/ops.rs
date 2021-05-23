@@ -1,6 +1,6 @@
 use crate::mem::*;
 use crate::ops_impl::*;
-use crate::reg::API::*;
+use crate::reg::api::*;
 use crate::reg::*;
 
 pub struct Op {
@@ -307,24 +307,55 @@ impl Ops {
 
         //////////////////////// 16 BITS LOADS ///////////////////////////
 
-        ops[0x01] = Some(Op::new("LD BC, (#)", 3, 12, |_r, _m, _p| {
+        ops[0x01] = Some(Op::new("LD BC, #", 3, 12, |_r, _m, _p| {
             ld_rr_nn(&mut _r.bc, _p);
         }));
-        ops[0x11] = Some(Op::new("LD DE, (#)", 3, 12, |_r, _m, _p| {
+        ops[0x11] = Some(Op::new("LD DE, #", 3, 12, |_r, _m, _p| {
             ld_rr_nn(&mut _r.de, _p);
         }));
-        ops[0x21] = Some(Op::new("LD HL, (#)", 3, 12, |_r, _m, _p| {
+        ops[0x21] = Some(Op::new("LD HL, #", 3, 12, |_r, _m, _p| {
             ld_rr_nn(&mut _r.hl, _p);
         }));
-        ops[0x31] = Some(Op::new("LD SP, (#)", 3, 12, |_r, _m, _p| {
+        ops[0x31] = Some(Op::new("LD SP, #", 3, 12, |_r, _m, _p| {
             ld_rr_nn(&mut _r.sp, _p);
         }));
 
-        /*
         ops[0x08] = Some(Op::new("LD (#), SP", 3, 20, |_r, _m, _p| {
             ld_ann_rr(_m, _p, &_r.sp);
         }));
-        */
+        ops[0xf8] = Some(Op::new("LD HL, SP+#", 2, 12, |_r, _m, _p| {
+            ld_rr_rrpsn(&mut _r.af, &mut _r.hl, &_r.sp, _p as i8);
+        }));
+        ops[0xf9] = Some(Op::new("LD SP, HL", 1, 8, |_r, _m, _p| {
+            ld_rr_rr(&mut _r.sp, &_r.hl);
+        }));
+
+        ops[0xc1] = Some(Op::new("POP BC", 1, 12, |_r, _m, _p| {
+            pop_rr_arr(_m, &mut _r.bc, &mut _r.sp);
+        }));
+        ops[0xd1] = Some(Op::new("POP BC", 1, 12, |_r, _m, _p| {
+            pop_rr_arr(_m, &mut _r.de, &mut _r.sp);
+        }));
+        ops[0xe1] = Some(Op::new("POP BC", 1, 12, |_r, _m, _p| {
+            pop_rr_arr(_m, &mut _r.hl, &mut _r.sp);
+        }));
+        ops[0xf1] = Some(Op::new("POP BC", 1, 12, |_r, _m, _p| {
+            pop_rr_arr(_m, &mut _r.af, &mut _r.sp);
+        }));
+
+        ops[0xc5] = Some(Op::new("PUSH BC", 1, 16, |_r, _m, _p| {
+            push_arr_rr(_m, &mut _r.sp, &mut _r.bc);
+        }));
+        ops[0xd5] = Some(Op::new("PUSH DE", 1, 16, |_r, _m, _p| {
+            push_arr_rr(_m, &mut _r.sp, &mut _r.de);
+        }));
+        ops[0xe5] = Some(Op::new("PUSH HL", 1, 16, |_r, _m, _p| {
+            push_arr_rr(_m, &mut _r.sp, &mut _r.hl);
+        }));
+        ops[0xf5] = Some(Op::new("PUSH AF", 1, 16, |_r, _m, _p| {
+            push_arr_rr(_m, &mut _r.sp, &mut _r.af);
+        }));
+
         Ops(ops)
     }
 
