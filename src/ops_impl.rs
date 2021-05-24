@@ -3,90 +3,106 @@ use crate::reg::api::*;
 
 ///////////////////////// 8 BITS LOADS ///////////////////////////
 
-pub fn ld_r_n(r: MR, n: u8) {
+pub fn ld_r_n(r: MR, n: u8) -> bool {
     sr(r, n);
+    true
 }
 
-pub fn ld_arr_n(m: MMy, rr: RR, n: u8) {
+pub fn ld_arr_n(m: MMy, rr: RR, n: u8) -> bool {
     m.set(grr(rr), n);
+    true
 }
 
-pub fn ld_ann_r(m: MMy, nn: u16, r: R) {
+pub fn ld_ann_r(m: MMy, nn: u16, r: R) -> bool {
     m.set(nn, gr(r));
+    true
 }
 
-pub fn ld_r_ann(m: My, r: MR, nn: u16) {
+pub fn ld_r_ann(m: My, r: MR, nn: u16) -> bool {
     sr(r, m.get(nn));
+    true
 }
 
-pub fn ldh_an_r(m: MMy, n: u8, r: R) {
+pub fn ldh_an_r(m: MMy, n: u8, r: R) -> bool {
     m.set(n as u16 | 0xff00, gr(r));
+    true
 }
 
-pub fn ldh_ar_r(m: MMy, r1: R, r2: R) {
+pub fn ldh_ar_r(m: MMy, r1: R, r2: R) -> bool {
     m.set(gr(r1) as u16 | 0xff00, gr(r2));
+    true
 }
 
-pub fn ldh_r_an(m: My, r: MR, n: u8) {
+pub fn ldh_r_an(m: My, r: MR, n: u8) -> bool {
     sr(r, m.get(n as u16 | 0xff00));
+    true
 }
 
-pub fn ld_arri_r(m: MMy, rr: MRR, r: R) {
+pub fn ld_arri_r(m: MMy, rr: MRR, r: R) -> bool {
     ld_arr_n(m, rr, gr(r));
     srr(rr, grr(rr).wrapping_add(1));
+    true
 }
 
-pub fn ld_arrd_r(m: MMy, rr: MRR, r: R) {
+pub fn ld_arrd_r(m: MMy, rr: MRR, r: R) -> bool {
     ld_arr_n(m, rr, gr(r));
     srr(rr, grr(rr).wrapping_sub(1));
+    true
 }
 
-pub fn ld_r_arri(m: My, r: MR, rr: MRR) {
+pub fn ld_r_arri(m: My, r: MR, rr: MRR) -> bool {
     ld_r_ann(m, r, grr(rr));
     srr(rr, grr(rr).wrapping_add(1));
+    true
 }
 
-pub fn ld_r_arrd(m: My, r: MR, rr: MRR) {
+pub fn ld_r_arrd(m: My, r: MR, rr: MRR) -> bool {
     ld_r_ann(m, r, grr(rr));
     srr(rr, grr(rr).wrapping_sub(1));
+    true
 }
 
 ///////////////////////// 16 BITS LOADS ///////////////////////////
 
-pub fn ld_rr_nn(rr: MRR, nn: u16) {
+pub fn ld_rr_nn(rr: MRR, nn: u16) -> bool {
     srr(rr, nn);
+    true
 }
 
-pub fn ld_ann_rr(m: MMy, nn: u16, rr: RR) {
+pub fn ld_ann_rr(m: MMy, nn: u16, rr: RR) -> bool {
     m.set(nn, gr((rr, D)));
     m.set(nn.wrapping_add(1), gr((rr, U)));
+    true
 }
 
-pub fn ld_rr_rrpsn(f: MRR, rr1: MRR, rr2: RR, sn: i8) {
+pub fn ld_rr_rrpsn(f: MRR, rr1: MRR, rr2: RR, sn: i8) -> bool {
     sf((f, Z), false);
     sf((f, N), false);
     sf((f, H), ((grr(rr2) & 0xf) + ((sn & 0xf) as u16)) > 0xf);
     sf((f, CY), ((grr(rr2) & 0xff) + (sn as u8 as u16)) > 0xff);
     srr(rr1, grr(rr2).wrapping_add(sn as u16));
+    true
 }
 
-pub fn pop_rr_arr(m: My, rr1: MRR, rr2: MRR) {
+pub fn pop_rr_arr(m: My, rr1: MRR, rr2: MRR) -> bool {
     sr((rr1, D), m.get(grr(rr2)));
     srr(rr2, grr(rr2).wrapping_add(1));
     sr((rr1, U), m.get(grr(rr2)));
     srr(rr2, grr(rr2).wrapping_add(1));
+    true
 }
 
-pub fn push_arr_rr(m: MMy, rr1: MRR, rr2: RR) {
+pub fn push_arr_rr(m: MMy, rr1: MRR, rr2: RR) -> bool {
     srr(rr1, grr(rr1).wrapping_sub(1));
     m.set(grr(rr1), gr((rr2, U)));
     srr(rr1, grr(rr1).wrapping_sub(1));
     m.set(grr(rr1), gr((rr2, D)));
+    true
 }
 
 ////////////////////// 8 BITS ARITHMETIC ///////////////////////
 
-pub fn add_n(af: MRR, n: u8) {
+pub fn add_n(af: MRR, n: u8) -> bool {
     let tmp = gr((af, U));
     let result = tmp.wrapping_add(n);
 
@@ -95,9 +111,10 @@ pub fn add_n(af: MRR, n: u8) {
     sf((af, N), false);
     sf((af, H), (n & 0xf) + (tmp & 0xf) > 0xf);
     sf((af, CY), (n as u16) + (tmp as u16) > 0xff);
+    true
 }
 
-pub fn adc_n(af: MRR, n: u8) {
+pub fn adc_n(af: MRR, n: u8) -> bool {
     let tmp = gr((af, U));
     let c: u8 = if gf((af, CY)) { 1 } else { 0 };
     let result = tmp.wrapping_add(n).wrapping_add(c);
@@ -107,9 +124,10 @@ pub fn adc_n(af: MRR, n: u8) {
     sf((af, N), false);
     sf((af, H), (n & 0xf) + (tmp & 0xf) + c > 0xf);
     sf((af, CY), (n as u16) + (tmp as u16) + (c as u16) > 0xff);
+    true
 }
 
-pub fn sub_n(af: MRR, n: u8) {
+pub fn sub_n(af: MRR, n: u8) -> bool {
     let tmp = gr((af, U));
     let result = tmp.wrapping_sub(n);
 
@@ -118,9 +136,10 @@ pub fn sub_n(af: MRR, n: u8) {
     sf((af, N), true);
     sf((af, H), (n & 0xf) > (tmp & 0xf));
     sf((af, CY), n > tmp);
+    true
 }
 
-pub fn sbc_n(af: MRR, n: u8) {
+pub fn sbc_n(af: MRR, n: u8) -> bool {
     let tmp = gr((af, U));
     let c: u8 = if gf((af, CY)) { 1 } else { 0 };
     let result = tmp.wrapping_sub(n).wrapping_sub(c);
@@ -130,9 +149,10 @@ pub fn sbc_n(af: MRR, n: u8) {
     sf((af, N), true);
     sf((af, H), (n & 0xf) + c > tmp & 0xf);
     sf((af, CY), (n as u16) + (c as u16) > tmp as u16);
+    true
 }
 
-pub fn and_n(af: MRR, n: u8) {
+pub fn and_n(af: MRR, n: u8) -> bool {
     let result = gr((af, U)) & n;
 
     sr((af, U), result);
@@ -140,9 +160,10 @@ pub fn and_n(af: MRR, n: u8) {
     sf((af, N), false);
     sf((af, H), true);
     sf((af, CY), false);
+    true
 }
 
-pub fn xor_n(af: MRR, n: u8) {
+pub fn xor_n(af: MRR, n: u8) -> bool {
     let result = gr((af, U)) ^ n;
 
     sr((af, U), result);
@@ -150,9 +171,10 @@ pub fn xor_n(af: MRR, n: u8) {
     sf((af, N), false);
     sf((af, H), false);
     sf((af, CY), false);
+    true
 }
 
-pub fn or_n(af: MRR, n: u8) {
+pub fn or_n(af: MRR, n: u8) -> bool {
     let result = gr((af, U)) | n;
 
     sr((af, U), result);
@@ -160,18 +182,20 @@ pub fn or_n(af: MRR, n: u8) {
     sf((af, N), false);
     sf((af, H), false);
     sf((af, CY), false);
+    true
 }
 
-pub fn cp_n(af: MRR, n: u8) {
+pub fn cp_n(af: MRR, n: u8) -> bool {
     let tmp = gr((af, U));
 
     sf((af, Z), tmp.wrapping_sub(n) == 0);
     sf((af, N), true);
     sf((af, H), (n & 0xf) > (tmp & 0xf));
     sf((af, CY), n > tmp);
+    true
 }
 
-pub fn inc_r(f: MRR, r: MR) {
+pub fn inc_r(f: MRR, r: MR) -> bool {
     let tmp = gr((r.0, r.1));
     let result = tmp.wrapping_add(1);
 
@@ -179,9 +203,10 @@ pub fn inc_r(f: MRR, r: MR) {
     sf((f, Z), result == 0);
     sf((f, N), false);
     sf((f, H), (tmp & 0xf) + 1 > 0xf);
+    true
 }
 
-pub fn inc(af: MRR) {
+pub fn inc(af: MRR) -> bool {
     let tmp = gr((af, U));
     let result = tmp.wrapping_add(1);
 
@@ -189,9 +214,10 @@ pub fn inc(af: MRR) {
     sf((af, Z), result == 0);
     sf((af, N), false);
     sf((af, H), (tmp & 0xf) + 1 > 0xf);
+    true
 }
 
-pub fn dec_r(f: MRR, r: MR) {
+pub fn dec_r(f: MRR, r: MR) -> bool {
     let tmp = gr((r.0, r.1));
     let result = tmp.wrapping_sub(1);
 
@@ -199,9 +225,10 @@ pub fn dec_r(f: MRR, r: MR) {
     sf((f, Z), result == 0);
     sf((f, N), true);
     sf((f, H), (tmp & 0xf) == 0);
+    true
 }
 
-pub fn dec(af: MRR) {
+pub fn dec(af: MRR) -> bool {
     let tmp = gr((af, U));
     let result = tmp.wrapping_sub(1);
 
@@ -209,9 +236,10 @@ pub fn dec(af: MRR) {
     sf((af, Z), result == 0);
     sf((af, N), true);
     sf((af, H), (tmp & 0xf) == 0);
+    true
 }
 
-pub fn inc_arr(f: MRR, m: MMy, rr: RR) {
+pub fn inc_arr(f: MRR, m: MMy, rr: RR) -> bool {
     let tmp = m.get(grr(rr));
     let result = tmp.wrapping_add(1);
 
@@ -219,9 +247,10 @@ pub fn inc_arr(f: MRR, m: MMy, rr: RR) {
     sf((f, Z), result == 0);
     sf((f, N), false);
     sf((f, H), (tmp & 0xf) + 1 > 0xf);
+    true
 }
 
-pub fn dec_arr(f: MRR, m: MMy, rr: RR) {
+pub fn dec_arr(f: MRR, m: MMy, rr: RR) -> bool {
     let tmp = m.get(grr(rr));
     let result = tmp.wrapping_sub(1);
 
@@ -229,31 +258,35 @@ pub fn dec_arr(f: MRR, m: MMy, rr: RR) {
     sf((f, Z), result == 0);
     sf((f, N), true);
     sf((f, H), (tmp & 0xf) == 0);
+    true
 }
 
-pub fn cpl(af: MRR) {
+pub fn cpl(af: MRR) -> bool {
     let result = !gr((af, U));
 
     sr((af, U), result);
     sf((af, N), true);
     sf((af, H), true);
+    true
 }
 
-pub fn scf(f: MRR) {
+pub fn scf(f: MRR) -> bool {
     sf((f, N), false);
     sf((f, H), false);
     sf((f, CY), true);
+    true
 }
 
-pub fn ccf(f: MRR) {
+pub fn ccf(f: MRR) -> bool {
     let result = if gf((f, CY)) { false } else { true };
 
     sf((f, N), false);
     sf((f, H), false);
     sf((f, CY), result);
+    true
 }
 
-pub fn daa(af: MRR) {
+pub fn daa(af: MRR) -> bool {
     let mut tmp = gr((af, U));
 
     if gf((af, N)) {
@@ -274,6 +307,54 @@ pub fn daa(af: MRR) {
             sr((af, U), tmp.wrapping_add(0x6));
         }
     }
+    true
+}
+
+///////////////////////// JUMP/CALLS //////////////////////////
+
+pub fn jp_cc_nn(pc: MRR, cc: bool, nn: u16) -> bool {
+    if cc {
+        srr(pc, nn);
+        return true;
+    }
+    false
+}
+
+pub fn jr_cc_sn(pc: MRR, cc: bool, sn: i8) -> bool {
+    if cc {
+        srr(pc, grr(pc).wrapping_add(sn as u16));
+        return true;
+    }
+    false
+}
+
+pub fn call_cc_nn(m: MMy, sp: MRR, pc: MRR, cc: bool, nn: u16) -> bool {
+    if cc {
+        push_arr_rr(m, sp, pc);
+        srr(pc, nn);
+        return true;
+    }
+    false
+}
+
+pub fn ret_cc(m: MMy, pc: MRR, sp: MRR, cc: bool) -> bool {
+    if cc {
+        pop_rr_arr(m, pc, sp);
+        return true;
+    }
+    false
+}
+
+pub fn reti(m: MMy, ime: MRR, pc: MRR, sp: MRR) -> bool {
+    pop_rr_arr(m, pc, sp);
+    srr(ime, 1);
+    true
+}
+
+pub fn rst(m: MMy, sp: MRR, pc: MRR, nn: u16) -> bool {
+    push_arr_rr(m, sp, pc);
+    srr(pc, nn);
+    true
 }
 
 #[cfg(test)]
@@ -486,5 +567,45 @@ mod tests {
         sub_n(&mut af, 0x1);
         daa(&mut af);
         assert_eq!(gr((&af, U)), 0x99);
+    }
+
+    #[test]
+    fn jp_call() {
+        let mut mem = Mem::new();
+        let mut sp = Reg::new();
+        let mut pc = Reg::new();
+        let mut ime = Reg::new();
+
+        ld_rr_nn(&mut sp, 0xffff);
+        ld_rr_nn(&mut pc, 0x4242);
+        ret_cc(&mut mem, &mut pc, &mut sp, false);
+        jp_cc_nn(&mut pc, false, 0x2424);
+        jr_cc_sn(&mut pc, false, -1);
+        call_cc_nn(&mut mem, &mut sp, &mut pc, false, 0x2442);
+        assert_eq!(grr(&pc), 0x4242);
+        jp_cc_nn(&mut pc, true, 0x2424);
+        assert_eq!(grr(&pc), 0x2424);
+        jr_cc_sn(&mut pc, true, -1);
+        assert_eq!(grr(&pc), 0x2423);
+        ld_rr_nn(&mut pc, 0);
+        jr_cc_sn(&mut pc, true, -1);
+        assert_eq!(grr(&pc), 0xffff);
+        jr_cc_sn(&mut pc, true, 10);
+        assert_eq!(grr(&pc), 0x9);
+        ld_rr_nn(&mut pc, 0x4224);
+        call_cc_nn(&mut mem, &mut sp, &mut pc, true, 0x2442);
+        assert_eq!(grr(&sp), 0xfffd);
+        assert_eq!(grr(&pc), 0x2442);
+        ret_cc(&mut mem, &mut pc, &mut sp, true);
+        assert_eq!(grr(&sp), 0xffff);
+        assert_eq!(grr(&pc), 0x4224);
+        rst(&mut mem, &mut sp, &mut pc, 0x80);
+        assert_eq!(grr(&sp), 0xfffd);
+        assert_eq!(grr(&pc), 0x80);
+        assert_eq!(grr(&ime), 0);
+        reti(&mut mem, &mut ime, &mut pc, &mut sp);
+        assert_eq!(grr(&sp), 0xffff);
+        assert_eq!(grr(&pc), 0x4224);
+        assert_eq!(grr(&ime), 1);
     }
 }

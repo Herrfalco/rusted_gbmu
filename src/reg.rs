@@ -52,6 +52,7 @@ pub struct Regs {
     pub hl: Reg,
     pub pc: Reg,
     pub sp: Reg,
+    pub ime: Reg,
 }
 
 impl Regs {
@@ -63,6 +64,7 @@ impl Regs {
             hl: Reg::new(),
             pc: Reg::new(),
             sp: Reg::new(),
+            ime: Reg::new(),
         }
     }
 }
@@ -74,6 +76,50 @@ pub mod api {
     pub const N: u16 = 0x40;
     pub const H: u16 = 0x20;
     pub const CY: u16 = 0x10;
+
+    pub const P1: u16 = 0xff00;
+    pub const SB: u16 = 0xff01;
+    pub const SC: u16 = 0xff02;
+    pub const DIV: u16 = 0xff04;
+    pub const TIMA: u16 = 0xff05;
+    pub const TMA: u16 = 0xff06;
+    pub const TAC: u16 = 0xff07;
+    pub const IF: u16 = 0xff0f;
+    pub const NR10: u16 = 0xff10;
+    pub const NR11: u16 = 0xff11;
+    pub const NR12: u16 = 0xff12;
+    pub const NR13: u16 = 0xff13;
+    pub const NR14: u16 = 0xff14;
+    pub const NR21: u16 = 0xff16;
+    pub const NR22: u16 = 0xff17;
+    pub const NR23: u16 = 0xff18;
+    pub const NR24: u16 = 0xff19;
+    pub const NR30: u16 = 0xff1a;
+    pub const NR31: u16 = 0xff1b;
+    pub const NR32: u16 = 0xff1c;
+    pub const NR33: u16 = 0xff1d;
+    pub const NR34: u16 = 0xff1e;
+    pub const NR41: u16 = 0xff20;
+    pub const NR42: u16 = 0xff21;
+    pub const NR43: u16 = 0xff22;
+    pub const NR44: u16 = 0xff23;
+    pub const NR50: u16 = 0xff24;
+    pub const NR51: u16 = 0xff25;
+    pub const NR52: u16 = 0xff26;
+    pub const WPRAM: u16 = 0xff30;
+    pub const LCDC: u16 = 0xff40;
+    pub const STAT: u16 = 0xff41;
+    pub const SCY: u16 = 0xff42;
+    pub const SCX: u16 = 0xff43;
+    pub const LY: u16 = 0xff44;
+    pub const LYC: u16 = 0xff45;
+    pub const DMA: u16 = 0xff46;
+    pub const BGP: u16 = 0xff47;
+    pub const OBP0: u16 = 0xff48;
+    pub const OBP1: u16 = 0xff49;
+    pub const WY: u16 = 0xff4a;
+    pub const WX: u16 = 0xff4b;
+    pub const IE: u16 = 0xffff;
 
     pub const U: bool = true;
     pub const D: bool = false;
