@@ -30,7 +30,7 @@ pub struct Ops(Vec<Option<Op>>);
 
 impl Ops {
     pub fn new() -> Ops {
-        let mut ops: Vec<Option<Op>> = (0..0x100).map(|_| None).collect();
+        let mut ops: Vec<Option<Op>> = (0..0x200).map(|_| None).collect();
 
         ///////////////////////// 8 BITS LOADS ///////////////////////////
         ops[0x02] = Some(Op::new("LD (BC), A", 1, (8, 0), |_r, _m, _p| -> bool {
@@ -747,6 +747,78 @@ impl Ops {
             rst(_m, &mut _r.sp, &mut _r.pc, 0x38)
         }));
 
+        ////////////////////// 16 BITS ARITHMETIC ///////////////////////
+
+        ops[0x03] = Some(Op::new("INC BC", 1, (8, 0), |_r, _m, _p| -> bool {
+            inc_rr(&mut _r.bc)
+        }));
+        ops[0x13] = Some(Op::new("INC DE", 1, (8, 0), |_r, _m, _p| -> bool {
+            inc_rr(&mut _r.de)
+        }));
+        ops[0x23] = Some(Op::new("INC HL", 1, (8, 0), |_r, _m, _p| -> bool {
+            inc_rr(&mut _r.hl)
+        }));
+        ops[0x33] = Some(Op::new("INC SP", 1, (8, 0), |_r, _m, _p| -> bool {
+            inc_rr(&mut _r.sp)
+        }));
+
+        ops[0x09] = Some(Op::new("ADD HL, BC", 1, (8, 0), |_r, _m, _p| -> bool {
+            add_rr_nn(&mut _r.af, &mut _r.hl, grr(&_r.bc))
+        }));
+        ops[0x19] = Some(Op::new("ADD HL, DE", 1, (8, 0), |_r, _m, _p| -> bool {
+            add_rr_nn(&mut _r.af, &mut _r.hl, grr(&_r.de))
+        }));
+        ops[0x29] = Some(Op::new("ADD HL, HL", 1, (8, 0), |_r, _m, _p| -> bool {
+            let tmp = grr(&_r.hl);
+            add_rr_nn(&mut _r.af, &mut _r.hl, tmp)
+        }));
+        ops[0x39] = Some(Op::new("ADD HL, SP", 1, (8, 0), |_r, _m, _p| -> bool {
+            add_rr_nn(&mut _r.af, &mut _r.hl, grr(&_r.sp))
+        }));
+        ops[0xe8] = Some(Op::new("ADD SP, #", 2, (16, 0), |_r, _m, _p| -> bool {
+            add_rr_sn(&mut _r.af, &mut _r.sp, _p as i8)
+        }));
+
+        ops[0x0b] = Some(Op::new("DEC BC", 1, (8, 0), |_r, _m, _p| -> bool {
+            inc_rr(&mut _r.bc)
+        }));
+        ops[0x1b] = Some(Op::new("DEC DE", 1, (8, 0), |_r, _m, _p| -> bool {
+            inc_rr(&mut _r.de)
+        }));
+        ops[0x2b] = Some(Op::new("DEC HL", 1, (8, 0), |_r, _m, _p| -> bool {
+            inc_rr(&mut _r.hl)
+        }));
+        ops[0x3b] = Some(Op::new("DEC SP", 1, (8, 0), |_r, _m, _p| -> bool {
+            inc_rr(&mut _r.sp)
+        }));
+
+        ////////////////////// ROTATE/SHIFT ///////////////////////
+
+        ops[0x07] = Some(Op::new("RLCA", 1, (4, 0), |_r, _m, _p| -> bool {
+            rlca(&mut _r.af)
+        }));
+        ops[0x17] = Some(Op::new("RLA", 1, (4, 0), |_r, _m, _p| -> bool {
+            rla(&mut _r.af)
+        }));
+        ops[0x0f] = Some(Op::new("RRCA", 1, (4, 0), |_r, _m, _p| -> bool {
+            rrca(&mut _r.af)
+        }));
+        ops[0x1f] = Some(Op::new("RRA", 1, (4, 0), |_r, _m, _p| -> bool {
+            rra(&mut _r.af)
+        }));
+
+        ////////////////////// MISC/CONTROL ///////////////////////
+
+        ops[0x00] = Some(Op::new("NOP", 1, (4, 0), |_r, _m, _p| -> bool { true }));
+        ops[0x10] = Some(Op::new("STOP", 2, (4, 0), |_r, _m, _p| -> bool { stop() }));
+        ops[0x76] = Some(Op::new("HALT", 1, (4, 0), |_r, _m, _p| -> bool { halt() }));
+        ops[0xf3] = Some(Op::new("DI", 1, (4, 0), |_r, _m, _p| -> bool {
+            di(&mut _r.ime)
+        }));
+        ops[0xfb] = Some(Op::new("EI", 1, (4, 0), |_r, _m, _p| -> bool {
+            ei(&mut _r.ime)
+        }));
+
         Ops(ops)
     }
 
@@ -814,6 +886,25 @@ mod tests {
             assert_eq!(op.label, "LD (BC), A");
         } else {
             panic!();
+        }
+    }
+
+    #[test]
+    fn count() {
+        let ops = Ops::new();
+        let empty: [usize; 12] = [
+            0xcb, 0xd3, 0xdb, 0xdd, 0xe3, 0xe4, 0xeb, 0xec, 0xed, 0xf4, 0xfc, 0xfd,
+        ];
+
+        for (i, op) in ops.0.iter().enumerate() {
+            if i >= 0x100 {
+                break;
+            };
+            if let None = op {
+                if !empty.contains(&i) {
+                    panic!("panic at: {:x}", i);
+                }
+            }
         }
     }
 }

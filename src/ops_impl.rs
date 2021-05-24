@@ -51,14 +51,18 @@ pub fn ld_arrd_r(m: MMy, rr: MRR, r: R) -> bool {
 }
 
 pub fn ld_r_arri(m: My, r: MR, rr: MRR) -> bool {
-    ld_r_ann(m, r, grr(rr));
-    srr(rr, grr(rr).wrapping_add(1));
+    let tmp = grr(rr);
+
+    ld_r_ann(m, r, tmp);
+    srr(rr, tmp.wrapping_add(1));
     true
 }
 
 pub fn ld_r_arrd(m: My, r: MR, rr: MRR) -> bool {
-    ld_r_ann(m, r, grr(rr));
-    srr(rr, grr(rr).wrapping_sub(1));
+    let tmp = grr(rr);
+
+    ld_r_ann(m, r, tmp);
+    srr(rr, tmp.wrapping_sub(1));
     true
 }
 
@@ -76,11 +80,13 @@ pub fn ld_ann_rr(m: MMy, nn: u16, rr: RR) -> bool {
 }
 
 pub fn ld_rr_rrpsn(f: MRR, rr1: MRR, rr2: RR, sn: i8) -> bool {
+    let tmp = grr(rr2);
+
     sf((f, Z), false);
     sf((f, N), false);
-    sf((f, H), ((grr(rr2) & 0xf) + ((sn & 0xf) as u16)) > 0xf);
-    sf((f, CY), ((grr(rr2) & 0xff) + (sn as u8 as u16)) > 0xff);
-    srr(rr1, grr(rr2).wrapping_add(sn as u16));
+    sf((f, H), (tmp & 0xf) + (sn & 0xf) as u16 > 0xf);
+    sf((f, CY), (tmp & 0xff) + sn as u8 as u16 > 0xff);
+    srr(rr1, tmp.wrapping_add(sn as u16));
     true
 }
 
@@ -357,6 +363,111 @@ pub fn rst(m: MMy, sp: MRR, pc: MRR, nn: u16) -> bool {
     true
 }
 
+////////////////////// 16 BITS ARITHMETIC ///////////////////////
+
+pub fn inc_rr(rr: MRR) -> bool {
+    srr(rr, grr(rr).wrapping_add(1));
+    true
+}
+
+pub fn dec_rr(rr: MRR) -> bool {
+    srr(rr, grr(rr).wrapping_sub(1));
+    true
+}
+
+pub fn add_rr_nn(af: MRR, rr: MRR, nn: u16) -> bool {
+    let tmp = grr(rr);
+
+    srr(rr, tmp.wrapping_add(nn));
+    sf((af, N), false);
+    sf((af, H), (nn & 0xfff) + (tmp & 0xfff) > 0xfff);
+    sf((af, CY), nn as u32 + tmp as u32 > 0xffff);
+    true
+}
+
+pub fn add_rr_sn(af: MRR, rr: MRR, sn: i8) -> bool {
+    let tmp = grr(rr);
+
+    srr(rr, tmp.wrapping_add(sn as u16));
+    sf((af, Z), false);
+    sf((af, N), false);
+    sf((af, H), ((tmp & 0xf) + ((sn & 0xf) as u16)) > 0xf);
+    sf((af, CY), ((tmp & 0xff) + (sn as u8 as u16)) > 0xff);
+    true
+}
+
+////////////////////// ROTATE/SHIFT ///////////////////////
+
+pub fn rlca(af: MRR) -> bool {
+    let tmp = gr((af, U));
+
+    sf((af, Z), false);
+    sf((af, N), false);
+    sf((af, H), false);
+    sf((af, CY), if tmp & 0x80 == 0 { false } else { true });
+    sr((af, U), (tmp << 1) | (tmp >> 7));
+    true
+}
+
+pub fn rla(af: MRR) -> bool {
+    let tmp = gr((af, U));
+    let cy = if gf((af, CY)) { 1 } else { 0 };
+
+    sf((af, Z), false);
+    sf((af, N), false);
+    sf((af, H), false);
+    sf((af, CY), if tmp & 0x80 == 0 { false } else { true });
+    sr((af, U), (tmp << 1) | cy);
+    true
+}
+
+pub fn rrca(af: MRR) -> bool {
+    let tmp = gr((af, U));
+
+    sf((af, Z), false);
+    sf((af, N), false);
+    sf((af, H), false);
+    sf((af, CY), if tmp & 0x1 == 0 { false } else { true });
+    sr((af, U), (tmp >> 1) | (tmp << 7));
+    true
+}
+
+pub fn rra(af: MRR) -> bool {
+    let tmp = gr((af, U));
+    let cy = if gf((af, CY)) { 0x80 } else { 0 };
+
+    sf((af, Z), false);
+    sf((af, N), false);
+    sf((af, H), false);
+    sr((af, U), (tmp >> 1) | cy);
+    sf((af, CY), if tmp & 0x1 == 0 { false } else { true });
+    true
+}
+
+////////////////////// MISC/CONTROL ///////////////////////
+
+/////ADD TESTS !
+/////need to be implemented (low consumption)
+pub fn stop() -> bool {
+    true
+}
+
+/////need to be implemented (low consumption)
+pub fn halt() -> bool {
+    true
+}
+
+pub fn di(ime: MRR) -> bool {
+    srr(ime, 0);
+    true
+}
+
+/////need to be dec in main loop
+pub fn ei(ime: MRR) -> bool {
+    srr(ime, 3);
+    true
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -497,7 +608,7 @@ mod tests {
     }
 
     #[test]
-    fn var_8() {
+    fn misc_8() {
         let mut mem = Mem::new();
         let mut af = Reg::new();
         let mut bc = Reg::new();
@@ -607,5 +718,63 @@ mod tests {
         assert_eq!(grr(&sp), 0xffff);
         assert_eq!(grr(&pc), 0x4224);
         assert_eq!(grr(&ime), 1);
+    }
+
+    #[test]
+    fn arit_16() {
+        let mut af = Reg::new();
+        let mut hl = Reg::new();
+
+        inc_rr(&mut hl);
+        assert_eq!(grr(&hl), 1);
+        dec_rr(&mut hl);
+        dec_rr(&mut hl);
+        assert_eq!(grr(&hl), 0xffff);
+        add_rr_nn(&mut af, &mut hl, 1);
+        assert!(gf((&af, H)));
+        assert!(gf((&af, CY)));
+        inc_rr(&mut hl);
+        assert_eq!(grr(&hl), 1);
+        add_rr_nn(&mut af, &mut hl, 0xfff);
+        assert!(gf((&af, H)));
+        assert!(!gf((&af, CY)));
+        add_rr_nn(&mut af, &mut hl, 0xf000);
+        assert!(!gf((&af, H)));
+        assert!(gf((&af, CY)));
+        add_rr_sn(&mut af, &mut hl, -1);
+        assert_eq!(grr(&hl), 0xffff);
+        assert!(!gf((&af, H)));
+        assert!(!gf((&af, CY)));
+        assert!(!gf((&af, N)));
+        add_rr_sn(&mut af, &mut hl, 0x11);
+        assert_eq!(grr(&hl), 0x10);
+    }
+
+    #[test]
+    fn rot_sh() {
+        let mut af = Reg::new();
+
+        sr((&mut af, U), 0xaa);
+        rlca(&mut af);
+        assert_eq!(gr((&af, U)), 0x55);
+        assert!(gf((&af, CY)));
+        rlca(&mut af);
+        assert_eq!(gr((&af, U)), 0xaa);
+        assert!(!gf((&af, CY)));
+        rrca(&mut af);
+        assert_eq!(gr((&af, U)), 0x55);
+        assert!(!gf((&af, CY)));
+        rrca(&mut af);
+        assert_eq!(gr((&af, U)), 0xaa);
+        assert!(gf((&af, CY)));
+        rra(&mut af);
+        assert_eq!(gr((&af, U)), 0xd5);
+        assert!(!gf((&af, CY)));
+        rla(&mut af);
+        assert_eq!(gr((&af, U)), 0xaa);
+        assert!(gf((&af, CY)));
+        rla(&mut af);
+        assert_eq!(gr((&af, U)), 0x55);
+        assert!(gf((&af, CY)));
     }
 }
