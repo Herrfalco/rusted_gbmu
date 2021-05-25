@@ -1,4 +1,4 @@
-use super::*;
+use super::imp::*;
 use crate::reg::*;
 
 #[test]

@@ -1,8 +1,5 @@
-use crate::mem::*;
-use crate::reg::api::*;
-
-#[cfg(test)]
-mod ops_impl_tst;
+pub use crate::mem::*;
+pub use crate::reg::api::*;
 
 ///////////////////////// 8 BITS LOADS ///////////////////////////
 

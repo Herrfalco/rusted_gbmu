@@ -1,10 +1,9 @@
 mod mem;
 mod ops;
-mod ops_impl;
 mod reg;
 
 use mem::*;
-use ops::*;
+use ops::ops::*;
 use reg::*;
 use std::env;
 use std::path::Path;

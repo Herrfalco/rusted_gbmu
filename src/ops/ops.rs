@@ -1,6 +1,5 @@
-use crate::mem::*;
-use crate::ops_impl::*;
-use crate::reg::api::*;
+use super::imp::*;
+use crate::mem::Mem;
 use crate::reg::*;
 
 pub struct Op {
@@ -460,7 +459,7 @@ impl Ops {
             add_n(&mut _r.af, gr((&_r.hl, D)))
         }));
         ops[0x86] = Some(Op::new("ADD A, (HL)", 1, (8, 0), |_r, _m, _p| -> bool {
-            add_n(&mut _r.af, gr((&_r.bc, U)))
+            add_n(&mut _r.af, _m.get(grr(&_r.hl)))
         }));
         ops[0x87] = Some(Op::new("ADD A, A", 1, (4, 0), |_r, _m, _p| -> bool {
             let tmp = gr((&_r.af, U));
@@ -486,7 +485,7 @@ impl Ops {
             adc_n(&mut _r.af, gr((&_r.hl, D)))
         }));
         ops[0x8e] = Some(Op::new("ADC A, (HL)", 1, (8, 0), |_r, _m, _p| -> bool {
-            adc_n(&mut _r.af, gr((&_r.bc, U)))
+            adc_n(&mut _r.af, _m.get(grr(&_r.hl)))
         }));
         ops[0x8f] = Some(Op::new("ADC A, A", 1, (4, 0), |_r, _m, _p| -> bool {
             let tmp = gr((&_r.af, U));
@@ -512,7 +511,7 @@ impl Ops {
             sub_n(&mut _r.af, gr((&_r.hl, D)))
         }));
         ops[0x96] = Some(Op::new("SUB A, (HL)", 1, (8, 0), |_r, _m, _p| -> bool {
-            sub_n(&mut _r.af, gr((&_r.bc, U)))
+            sub_n(&mut _r.af, _m.get(grr(&_r.hl)))
         }));
         ops[0x97] = Some(Op::new("SUB A, A", 1, (4, 0), |_r, _m, _p| -> bool {
             let tmp = gr((&_r.af, U));
@@ -538,7 +537,7 @@ impl Ops {
             sbc_n(&mut _r.af, gr((&_r.hl, D)))
         }));
         ops[0x9e] = Some(Op::new("SBC A, (HL)", 1, (8, 0), |_r, _m, _p| -> bool {
-            sbc_n(&mut _r.af, gr((&_r.bc, U)))
+            sbc_n(&mut _r.af, _m.get(grr(&_r.hl)))
         }));
         ops[0x9f] = Some(Op::new("SBC A, A", 1, (4, 0), |_r, _m, _p| -> bool {
             let tmp = gr((&_r.af, U));
@@ -564,7 +563,7 @@ impl Ops {
             and_n(&mut _r.af, gr((&_r.hl, D)))
         }));
         ops[0xa6] = Some(Op::new("AND A, (HL)", 1, (8, 0), |_r, _m, _p| -> bool {
-            and_n(&mut _r.af, gr((&_r.bc, U)))
+            and_n(&mut _r.af, _m.get(grr(&_r.hl)))
         }));
         ops[0xa7] = Some(Op::new("AND A, A", 1, (4, 0), |_r, _m, _p| -> bool {
             let tmp = gr((&_r.af, U));
@@ -590,7 +589,7 @@ impl Ops {
             xor_n(&mut _r.af, gr((&_r.hl, D)))
         }));
         ops[0xae] = Some(Op::new("XOR A, (HL)", 1, (8, 0), |_r, _m, _p| -> bool {
-            xor_n(&mut _r.af, gr((&_r.bc, U)))
+            xor_n(&mut _r.af, _m.get(grr(&_r.hl)))
         }));
         ops[0xaf] = Some(Op::new("XOR A, A", 1, (4, 0), |_r, _m, _p| -> bool {
             let tmp = gr((&_r.af, U));
@@ -616,7 +615,7 @@ impl Ops {
             or_n(&mut _r.af, gr((&_r.hl, D)))
         }));
         ops[0xb6] = Some(Op::new("OR A, (HL)", 1, (8, 0), |_r, _m, _p| -> bool {
-            or_n(&mut _r.af, gr((&_r.bc, U)))
+            or_n(&mut _r.af, _m.get(grr(&_r.hl)))
         }));
         ops[0xb7] = Some(Op::new("OR A, A", 1, (4, 0), |_r, _m, _p| -> bool {
             let tmp = gr((&_r.af, U));
@@ -642,7 +641,7 @@ impl Ops {
             cp_n(&mut _r.af, gr((&_r.hl, D)))
         }));
         ops[0xbe] = Some(Op::new("CP A, (HL)", 1, (8, 0), |_r, _m, _p| -> bool {
-            cp_n(&mut _r.af, gr((&_r.bc, U)))
+            cp_n(&mut _r.af, _m.get(grr(&_r.hl)))
         }));
         ops[0xbf] = Some(Op::new("CP A, A", 1, (4, 0), |_r, _m, _p| -> bool {
             let tmp = gr((&_r.af, U));
@@ -795,16 +794,16 @@ impl Ops {
         ////////////////////// ROTATE/SHIFT ///////////////////////
 
         ops[0x07] = Some(Op::new("RLCA", 1, (4, 0), |_r, _m, _p| -> bool {
-            rlca(&mut _r.af)
+            rlca(&mut _r.af, true)
         }));
         ops[0x17] = Some(Op::new("RLA", 1, (4, 0), |_r, _m, _p| -> bool {
-            rla(&mut _r.af)
+            rla(&mut _r.af, true)
         }));
         ops[0x0f] = Some(Op::new("RRCA", 1, (4, 0), |_r, _m, _p| -> bool {
-            rrca(&mut _r.af)
+            rrca(&mut _r.af, true)
         }));
         ops[0x1f] = Some(Op::new("RRA", 1, (4, 0), |_r, _m, _p| -> bool {
-            rra(&mut _r.af)
+            rra(&mut _r.af, true)
         }));
 
         ////////////////////// MISC/CONTROL ///////////////////////
