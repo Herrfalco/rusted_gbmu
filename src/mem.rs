@@ -1,3 +1,4 @@
+use crate::reg::api::*;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
@@ -33,6 +34,40 @@ impl Mem {
             return Err("Can't read from rom");
         }
         Ok(())
+    }
+
+    pub fn init_spe_reg(&mut self) {
+        self.set(TIMA, 0x00);
+        self.set(TMA, 0x00);
+        self.set(TAC, 0x00);
+        self.set(NR10, 0x80);
+        self.set(NR11, 0xbf);
+        self.set(NR12, 0xf3);
+        self.set(NR14, 0xbf);
+        self.set(NR21, 0x3f);
+        self.set(NR22, 0x00);
+        self.set(NR24, 0xbf);
+        self.set(NR30, 0x7f);
+        self.set(NR31, 0xff);
+        self.set(NR32, 0x9f);
+        self.set(NR34, 0xbf);
+        self.set(NR41, 0xff);
+        self.set(NR42, 0x00);
+        self.set(NR43, 0x00);
+        self.set(NR44, 0xbf);
+        self.set(NR50, 0x77);
+        self.set(NR51, 0xf3);
+        self.set(NR52, 0xf1);
+        self.set(LCDC, 0x91);
+        self.set(SCY, 0x00);
+        self.set(SCX, 0x00);
+        self.set(LYC, 0x00);
+        self.set(BGP, 0xfc);
+        self.set(OBP0, 0xff);
+        self.set(OBP1, 0xff);
+        self.set(WY, 0x00);
+        self.set(WX, 0x00);
+        self.set(IE, 0x00);
     }
 }
 

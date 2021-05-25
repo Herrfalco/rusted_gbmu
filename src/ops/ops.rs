@@ -1,6 +1,7 @@
 use super::imp::*;
 use crate::mem::Mem;
 use crate::reg::*;
+use std::fmt;
 
 pub struct Op {
     label: &'static str,
@@ -23,11 +24,32 @@ impl Op {
             func,
         }
     }
+
+    pub fn len(&self) -> usize {
+        self.len
+    }
+
+    pub fn exec(&self, r: &mut Regs, m: &mut Mem, p: u16) -> bool {
+        (self.func)(r, m, p)
+    }
+}
+
+impl fmt::Display for Op {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.label)
+    }
 }
 
 pub struct Ops(Vec<Option<Op>>);
 
 impl Ops {
+    pub fn get(&self, idx: usize) -> Option<&Op> {
+        match &self.0[idx] {
+            Some(op) => Some(&op),
+            None => None,
+        }
+    }
+
     pub fn new() -> Ops {
         let mut ops: Vec<Option<Op>> = (0..0x200).map(|_| None).collect();
 
@@ -1630,14 +1652,6 @@ impl Ops {
 
         Ops(ops)
     }
-
-    pub fn get(&self, idx: usize) -> &Option<Op> {
-        if idx > 0xff {
-            &None
-        } else {
-            &self.0[idx]
-        }
-    }
 }
 
 #[cfg(test)]
@@ -1706,9 +1720,6 @@ mod tests {
         ];
 
         for (i, op) in ops.0.iter().enumerate() {
-            if i >= 0x100 {
-                break;
-            };
             if let None = op {
                 if !empty.contains(&i) {
                     panic!("panic at: {:x}", i);

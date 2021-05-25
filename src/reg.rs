@@ -1,3 +1,5 @@
+use std::fmt;
+
 pub struct Reg {
     val: u16,
 }
@@ -66,6 +68,37 @@ impl Regs {
             sp: Reg::new(),
             ime: Reg::new(),
         }
+    }
+
+    pub fn init(&mut self) {
+        self.af.set_16(0x01b0);
+        self.bc.set_16(0x0013);
+        self.de.set_16(0x00d8);
+        self.hl.set_16(0x014d);
+        self.pc.set_16(0x0100);
+        self.sp.set_16(0xfffe);
+    }
+}
+
+impl fmt::Display for Regs {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "-----------------------------------------------------\n\
+            A=0x{:02x}     Z={:5}    N={:5}    H={:5}    CY={:5}\n\
+            BC=0x{:04x}  DE=0x{:04x}  HL=0x{:04x}  PC=0x{:04x}  SP=0x{:04x}\n\
+            -----------------------------------------------------",
+            api::gr((&self.af, api::U)),
+            api::gf((&self.af, api::Z)),
+            api::gf((&self.af, api::N)),
+            api::gf((&self.af, api::H)),
+            api::gf((&self.af, api::CY)),
+            api::grr(&self.bc),
+            api::grr(&self.de),
+            api::grr(&self.hl),
+            api::grr(&self.pc),
+            api::grr(&self.sp)
+        )
     }
 }
 
