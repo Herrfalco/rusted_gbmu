@@ -550,6 +550,18 @@ pub fn rr_arr(af: MRR, m: MMy, rr: RR) -> bool {
     true
 }
 
+pub fn sla(af: MRR) -> bool {
+    let tmp = gr((af, U));
+    let result = tmp << 1;
+
+    sf((af, Z), result == 0);
+    sf((af, N), false);
+    sf((af, H), false);
+    sf((af, CY), if tmp & 0x80 == 0 { false } else { true });
+    sr((af, U), result);
+    true
+}
+
 pub fn sla_r(af: MRR, r: MR) -> bool {
     let tmp = gr((r.0, r.1));
     let result = tmp << 1;
@@ -571,6 +583,18 @@ pub fn sla_arr(af: MRR, m: MMy, rr: RR) -> bool {
     sf((af, H), false);
     sf((af, CY), if tmp & 0x80 == 0 { false } else { true });
     m.set(grr(rr), result);
+    true
+}
+
+pub fn sra(af: MRR) -> bool {
+    let tmp = gr((af, U));
+    let result = (tmp >> 1) | (tmp & 0x80);
+
+    sf((af, Z), result == 0);
+    sf((af, N), false);
+    sf((af, H), false);
+    sf((af, CY), if tmp & 0x1 == 0 { false } else { true });
+    sr((af, U), result);
     true
 }
 
@@ -598,6 +622,18 @@ pub fn sra_arr(af: MRR, m: MMy, rr: RR) -> bool {
     true
 }
 
+pub fn srl(af: MRR) -> bool {
+    let tmp = gr((af, U));
+    let result = tmp >> 1;
+
+    sf((af, Z), result == 0);
+    sf((af, N), false);
+    sf((af, H), false);
+    sf((af, CY), if tmp & 0x1 == 0 { false } else { true });
+    sr((af, U), result);
+    true
+}
+
 pub fn srl_r(af: MRR, r: MR) -> bool {
     let tmp = gr((r.0, r.1));
     let result = tmp >> 1;
@@ -619,6 +655,18 @@ pub fn srl_arr(af: MRR, m: MMy, rr: RR) -> bool {
     sf((af, H), false);
     sf((af, CY), if tmp & 0x1 == 0 { false } else { true });
     m.set(grr(rr), result);
+    true
+}
+
+pub fn swap(af: MRR) -> bool {
+    let tmp = gr((af, U));
+    let result = (tmp >> 4) | (tmp << 4);
+
+    sf((af, Z), result == 0);
+    sf((af, N), false);
+    sf((af, H), false);
+    sf((af, CY), false);
+    sr((af, U), result);
     true
 }
 

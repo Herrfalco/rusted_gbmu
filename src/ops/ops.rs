@@ -818,6 +818,816 @@ impl Ops {
             ei(&mut _r.ime)
         }));
 
+        ///////////////////////// CB OPS //////////////////////////
+
+        ops[0x100] = Some(Op::new("RLC B", 2, (8, 0), |_r, _m, _p| -> bool {
+            rlc_r(&mut _r.af, (&mut _r.bc, U))
+        }));
+        ops[0x101] = Some(Op::new("RLC C", 2, (8, 0), |_r, _m, _p| -> bool {
+            rlc_r(&mut _r.af, (&mut _r.bc, D))
+        }));
+        ops[0x102] = Some(Op::new("RLC D", 2, (8, 0), |_r, _m, _p| -> bool {
+            rlc_r(&mut _r.af, (&mut _r.de, U))
+        }));
+        ops[0x103] = Some(Op::new("RLC E", 2, (8, 0), |_r, _m, _p| -> bool {
+            rlc_r(&mut _r.af, (&mut _r.de, D))
+        }));
+        ops[0x104] = Some(Op::new("RLC H", 2, (8, 0), |_r, _m, _p| -> bool {
+            rlc_r(&mut _r.af, (&mut _r.hl, U))
+        }));
+        ops[0x105] = Some(Op::new("RLC L", 2, (8, 0), |_r, _m, _p| -> bool {
+            rlc_r(&mut _r.af, (&mut _r.hl, D))
+        }));
+        ops[0x106] = Some(Op::new("RLC (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            rlc_arr(&mut _r.af, _m, &mut _r.hl)
+        }));
+        ops[0x107] = Some(Op::new("RLC A", 2, (8, 0), |_r, _m, _p| -> bool {
+            rlca(&mut _r.af, false)
+        }));
+
+        ops[0x108] = Some(Op::new("RRC B", 2, (8, 0), |_r, _m, _p| -> bool {
+            rrc_r(&mut _r.af, (&mut _r.bc, U))
+        }));
+        ops[0x109] = Some(Op::new("RRC C", 2, (8, 0), |_r, _m, _p| -> bool {
+            rrc_r(&mut _r.af, (&mut _r.bc, D))
+        }));
+        ops[0x10a] = Some(Op::new("RRC D", 2, (8, 0), |_r, _m, _p| -> bool {
+            rrc_r(&mut _r.af, (&mut _r.de, U))
+        }));
+        ops[0x10b] = Some(Op::new("RRC E", 2, (8, 0), |_r, _m, _p| -> bool {
+            rrc_r(&mut _r.af, (&mut _r.de, D))
+        }));
+        ops[0x10c] = Some(Op::new("RRC H", 2, (8, 0), |_r, _m, _p| -> bool {
+            rrc_r(&mut _r.af, (&mut _r.hl, U))
+        }));
+        ops[0x10d] = Some(Op::new("RRC L", 2, (8, 0), |_r, _m, _p| -> bool {
+            rrc_r(&mut _r.af, (&mut _r.hl, D))
+        }));
+        ops[0x10e] = Some(Op::new("RRC (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            rrc_arr(&mut _r.af, _m, &mut _r.hl)
+        }));
+        ops[0x10f] = Some(Op::new("RRC A", 2, (8, 0), |_r, _m, _p| -> bool {
+            rrca(&mut _r.af, false)
+        }));
+
+        ops[0x110] = Some(Op::new("RL B", 2, (8, 0), |_r, _m, _p| -> bool {
+            rl_r(&mut _r.af, (&mut _r.bc, U))
+        }));
+        ops[0x111] = Some(Op::new("RL C", 2, (8, 0), |_r, _m, _p| -> bool {
+            rl_r(&mut _r.af, (&mut _r.bc, D))
+        }));
+        ops[0x112] = Some(Op::new("RL D", 2, (8, 0), |_r, _m, _p| -> bool {
+            rl_r(&mut _r.af, (&mut _r.de, U))
+        }));
+        ops[0x113] = Some(Op::new("RL E", 2, (8, 0), |_r, _m, _p| -> bool {
+            rl_r(&mut _r.af, (&mut _r.de, D))
+        }));
+        ops[0x114] = Some(Op::new("RL H", 2, (8, 0), |_r, _m, _p| -> bool {
+            rl_r(&mut _r.af, (&mut _r.hl, U))
+        }));
+        ops[0x115] = Some(Op::new("RL L", 2, (8, 0), |_r, _m, _p| -> bool {
+            rl_r(&mut _r.af, (&mut _r.hl, D))
+        }));
+        ops[0x116] = Some(Op::new("RL (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            rl_arr(&mut _r.af, _m, &mut _r.hl)
+        }));
+        ops[0x117] = Some(Op::new("RL A", 2, (8, 0), |_r, _m, _p| -> bool {
+            rla(&mut _r.af, false)
+        }));
+
+        ops[0x118] = Some(Op::new("RR B", 2, (8, 0), |_r, _m, _p| -> bool {
+            rr_r(&mut _r.af, (&mut _r.bc, U))
+        }));
+        ops[0x119] = Some(Op::new("RR C", 2, (8, 0), |_r, _m, _p| -> bool {
+            rr_r(&mut _r.af, (&mut _r.bc, D))
+        }));
+        ops[0x11a] = Some(Op::new("RR D", 2, (8, 0), |_r, _m, _p| -> bool {
+            rr_r(&mut _r.af, (&mut _r.de, U))
+        }));
+        ops[0x11b] = Some(Op::new("RR E", 2, (8, 0), |_r, _m, _p| -> bool {
+            rr_r(&mut _r.af, (&mut _r.de, D))
+        }));
+        ops[0x11c] = Some(Op::new("RR H", 2, (8, 0), |_r, _m, _p| -> bool {
+            rr_r(&mut _r.af, (&mut _r.hl, U))
+        }));
+        ops[0x11d] = Some(Op::new("RR L", 2, (8, 0), |_r, _m, _p| -> bool {
+            rr_r(&mut _r.af, (&mut _r.hl, D))
+        }));
+        ops[0x11e] = Some(Op::new("RR (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            rr_arr(&mut _r.af, _m, &mut _r.hl)
+        }));
+        ops[0x11f] = Some(Op::new("RR A", 2, (8, 0), |_r, _m, _p| -> bool {
+            rra(&mut _r.af, false)
+        }));
+
+        ops[0x120] = Some(Op::new("SLA B", 2, (8, 0), |_r, _m, _p| -> bool {
+            sla_r(&mut _r.af, (&mut _r.bc, U))
+        }));
+        ops[0x121] = Some(Op::new("SLA C", 2, (8, 0), |_r, _m, _p| -> bool {
+            sla_r(&mut _r.af, (&mut _r.bc, D))
+        }));
+        ops[0x122] = Some(Op::new("SLA D", 2, (8, 0), |_r, _m, _p| -> bool {
+            sla_r(&mut _r.af, (&mut _r.de, U))
+        }));
+        ops[0x123] = Some(Op::new("SLA E", 2, (8, 0), |_r, _m, _p| -> bool {
+            sla_r(&mut _r.af, (&mut _r.de, D))
+        }));
+        ops[0x124] = Some(Op::new("SLA H", 2, (8, 0), |_r, _m, _p| -> bool {
+            sla_r(&mut _r.af, (&mut _r.hl, U))
+        }));
+        ops[0x125] = Some(Op::new("SLA L", 2, (8, 0), |_r, _m, _p| -> bool {
+            sla_r(&mut _r.af, (&mut _r.hl, D))
+        }));
+        ops[0x126] = Some(Op::new("SLA (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            sla_arr(&mut _r.af, _m, &mut _r.hl)
+        }));
+        ops[0x127] = Some(Op::new("SLA A", 2, (8, 0), |_r, _m, _p| -> bool {
+            sla(&mut _r.af)
+        }));
+
+        ops[0x128] = Some(Op::new("SRA B", 2, (8, 0), |_r, _m, _p| -> bool {
+            sra_r(&mut _r.af, (&mut _r.bc, U))
+        }));
+        ops[0x129] = Some(Op::new("SRA C", 2, (8, 0), |_r, _m, _p| -> bool {
+            sra_r(&mut _r.af, (&mut _r.bc, D))
+        }));
+        ops[0x12a] = Some(Op::new("SRA D", 2, (8, 0), |_r, _m, _p| -> bool {
+            sra_r(&mut _r.af, (&mut _r.de, U))
+        }));
+        ops[0x12b] = Some(Op::new("SRA E", 2, (8, 0), |_r, _m, _p| -> bool {
+            sra_r(&mut _r.af, (&mut _r.de, D))
+        }));
+        ops[0x12c] = Some(Op::new("SRA H", 2, (8, 0), |_r, _m, _p| -> bool {
+            sra_r(&mut _r.af, (&mut _r.hl, U))
+        }));
+        ops[0x12d] = Some(Op::new("SRA L", 2, (8, 0), |_r, _m, _p| -> bool {
+            sra_r(&mut _r.af, (&mut _r.hl, D))
+        }));
+        ops[0x12e] = Some(Op::new("SRA (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            sra_arr(&mut _r.af, _m, &mut _r.hl)
+        }));
+        ops[0x12f] = Some(Op::new("SRA A", 2, (8, 0), |_r, _m, _p| -> bool {
+            sra(&mut _r.af)
+        }));
+
+        ops[0x130] = Some(Op::new("SWAP B", 2, (8, 0), |_r, _m, _p| -> bool {
+            swap_r(&mut _r.af, (&mut _r.bc, U))
+        }));
+        ops[0x131] = Some(Op::new("SWAP C", 2, (8, 0), |_r, _m, _p| -> bool {
+            swap_r(&mut _r.af, (&mut _r.bc, D))
+        }));
+        ops[0x132] = Some(Op::new("SWAP D", 2, (8, 0), |_r, _m, _p| -> bool {
+            swap_r(&mut _r.af, (&mut _r.de, U))
+        }));
+        ops[0x133] = Some(Op::new("SWAP E", 2, (8, 0), |_r, _m, _p| -> bool {
+            swap_r(&mut _r.af, (&mut _r.de, D))
+        }));
+        ops[0x134] = Some(Op::new("SWAP H", 2, (8, 0), |_r, _m, _p| -> bool {
+            swap_r(&mut _r.af, (&mut _r.hl, U))
+        }));
+        ops[0x135] = Some(Op::new("SWAP L", 2, (8, 0), |_r, _m, _p| -> bool {
+            swap_r(&mut _r.af, (&mut _r.hl, D))
+        }));
+        ops[0x136] = Some(Op::new("SWAP (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            swap_arr(&mut _r.af, _m, &mut _r.hl)
+        }));
+        ops[0x137] = Some(Op::new("SWAP A", 2, (8, 0), |_r, _m, _p| -> bool {
+            swap(&mut _r.af)
+        }));
+
+        ops[0x138] = Some(Op::new("SRL B", 2, (8, 0), |_r, _m, _p| -> bool {
+            srl_r(&mut _r.af, (&mut _r.bc, U))
+        }));
+        ops[0x139] = Some(Op::new("SRL C", 2, (8, 0), |_r, _m, _p| -> bool {
+            srl_r(&mut _r.af, (&mut _r.bc, D))
+        }));
+        ops[0x13a] = Some(Op::new("SRL D", 2, (8, 0), |_r, _m, _p| -> bool {
+            srl_r(&mut _r.af, (&mut _r.de, U))
+        }));
+        ops[0x13b] = Some(Op::new("SRL E", 2, (8, 0), |_r, _m, _p| -> bool {
+            srl_r(&mut _r.af, (&mut _r.de, D))
+        }));
+        ops[0x13c] = Some(Op::new("SRL H", 2, (8, 0), |_r, _m, _p| -> bool {
+            srl_r(&mut _r.af, (&mut _r.hl, U))
+        }));
+        ops[0x13d] = Some(Op::new("SRL L", 2, (8, 0), |_r, _m, _p| -> bool {
+            srl_r(&mut _r.af, (&mut _r.hl, D))
+        }));
+        ops[0x13e] = Some(Op::new("SRL (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            srl_arr(&mut _r.af, _m, &mut _r.hl)
+        }));
+        ops[0x13f] = Some(Op::new("SRL A", 2, (8, 0), |_r, _m, _p| -> bool {
+            srl(&mut _r.af)
+        }));
+
+        ops[0x140] = Some(Op::new("BIT 0, B", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x1, gr((&_r.bc, U)))
+        }));
+        ops[0x141] = Some(Op::new("BIT 0, C", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x1, gr((&_r.bc, D)))
+        }));
+        ops[0x142] = Some(Op::new("BIT 0, D", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x1, gr((&_r.de, U)))
+        }));
+        ops[0x143] = Some(Op::new("BIT 0, E", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x1, gr((&_r.de, D)))
+        }));
+        ops[0x144] = Some(Op::new("BIT 0, H", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x1, gr((&_r.hl, U)))
+        }));
+        ops[0x145] = Some(Op::new("BIT 0, L", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x1, gr((&_r.hl, D)))
+        }));
+        ops[0x146] = Some(Op::new("BIT 0, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x1, _m.get(grr(&_r.hl)))
+        }));
+        ops[0x147] = Some(Op::new("BIT 0, A", 2, (8, 0), |_r, _m, _p| -> bool {
+            let tmp = gr((&_r.af, U));
+            bit_msk_n(&mut _r.af, 0x1, tmp)
+        }));
+
+        ops[0x148] = Some(Op::new("BIT 1, B", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x2, gr((&_r.bc, U)))
+        }));
+        ops[0x149] = Some(Op::new("BIT 1, C", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x2, gr((&_r.bc, D)))
+        }));
+        ops[0x14a] = Some(Op::new("BIT 1, D", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x2, gr((&_r.de, U)))
+        }));
+        ops[0x14b] = Some(Op::new("BIT 1, E", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x2, gr((&_r.de, D)))
+        }));
+        ops[0x14c] = Some(Op::new("BIT 1, H", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x2, gr((&_r.hl, U)))
+        }));
+        ops[0x14d] = Some(Op::new("BIT 1, L", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x2, gr((&_r.hl, D)))
+        }));
+        ops[0x14e] = Some(Op::new("BIT 1, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x2, _m.get(grr(&_r.hl)))
+        }));
+        ops[0x14f] = Some(Op::new("BIT 1, A", 2, (8, 0), |_r, _m, _p| -> bool {
+            let tmp = gr((&_r.af, U));
+            bit_msk_n(&mut _r.af, 0x2, tmp)
+        }));
+
+        ops[0x150] = Some(Op::new("BIT 2, B", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x4, gr((&_r.bc, U)))
+        }));
+        ops[0x151] = Some(Op::new("BIT 2, C", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x4, gr((&_r.bc, D)))
+        }));
+        ops[0x152] = Some(Op::new("BIT 2, D", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x4, gr((&_r.de, U)))
+        }));
+        ops[0x153] = Some(Op::new("BIT 2, E", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x4, gr((&_r.de, D)))
+        }));
+        ops[0x154] = Some(Op::new("BIT 2, H", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x4, gr((&_r.hl, U)))
+        }));
+        ops[0x155] = Some(Op::new("BIT 2, L", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x4, gr((&_r.hl, D)))
+        }));
+        ops[0x156] = Some(Op::new("BIT 2, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x4, _m.get(grr(&_r.hl)))
+        }));
+        ops[0x157] = Some(Op::new("BIT 2, A", 2, (8, 0), |_r, _m, _p| -> bool {
+            let tmp = gr((&_r.af, U));
+            bit_msk_n(&mut _r.af, 0x4, tmp)
+        }));
+
+        ops[0x158] = Some(Op::new("BIT 3, B", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x8, gr((&_r.bc, U)))
+        }));
+        ops[0x159] = Some(Op::new("BIT 3, C", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x8, gr((&_r.bc, D)))
+        }));
+        ops[0x15a] = Some(Op::new("BIT 3, D", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x8, gr((&_r.de, U)))
+        }));
+        ops[0x15b] = Some(Op::new("BIT 3, E", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x8, gr((&_r.de, D)))
+        }));
+        ops[0x15c] = Some(Op::new("BIT 3, H", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x8, gr((&_r.hl, U)))
+        }));
+        ops[0x15d] = Some(Op::new("BIT 3, L", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x8, gr((&_r.hl, D)))
+        }));
+        ops[0x15e] = Some(Op::new("BIT 3, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x8, _m.get(grr(&_r.hl)))
+        }));
+        ops[0x15f] = Some(Op::new("BIT 3, A", 2, (8, 0), |_r, _m, _p| -> bool {
+            let tmp = gr((&_r.af, U));
+            bit_msk_n(&mut _r.af, 0x8, tmp)
+        }));
+
+        ops[0x160] = Some(Op::new("BIT 4, B", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x10, gr((&_r.bc, U)))
+        }));
+        ops[0x161] = Some(Op::new("BIT 4, C", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x10, gr((&_r.bc, D)))
+        }));
+        ops[0x162] = Some(Op::new("BIT 4, D", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x10, gr((&_r.de, U)))
+        }));
+        ops[0x163] = Some(Op::new("BIT 4, E", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x10, gr((&_r.de, D)))
+        }));
+        ops[0x164] = Some(Op::new("BIT 4, H", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x10, gr((&_r.hl, U)))
+        }));
+        ops[0x165] = Some(Op::new("BIT 4, L", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x10, gr((&_r.hl, D)))
+        }));
+        ops[0x166] = Some(Op::new("BIT 4, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x10, _m.get(grr(&_r.hl)))
+        }));
+        ops[0x167] = Some(Op::new("BIT 4, A", 2, (8, 0), |_r, _m, _p| -> bool {
+            let tmp = gr((&_r.af, U));
+            bit_msk_n(&mut _r.af, 0x10, tmp)
+        }));
+
+        ops[0x168] = Some(Op::new("BIT 5, B", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x20, gr((&_r.bc, U)))
+        }));
+        ops[0x169] = Some(Op::new("BIT 5, C", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x20, gr((&_r.bc, D)))
+        }));
+        ops[0x16a] = Some(Op::new("BIT 5, D", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x20, gr((&_r.de, U)))
+        }));
+        ops[0x16b] = Some(Op::new("BIT 5, E", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x20, gr((&_r.de, D)))
+        }));
+        ops[0x16c] = Some(Op::new("BIT 5, H", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x20, gr((&_r.hl, U)))
+        }));
+        ops[0x16d] = Some(Op::new("BIT 5, L", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x20, gr((&_r.hl, D)))
+        }));
+        ops[0x16e] = Some(Op::new("BIT 5, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x20, _m.get(grr(&_r.hl)))
+        }));
+        ops[0x16f] = Some(Op::new("BIT 5, A", 2, (8, 0), |_r, _m, _p| -> bool {
+            let tmp = gr((&_r.af, U));
+            bit_msk_n(&mut _r.af, 0x20, tmp)
+        }));
+
+        ops[0x170] = Some(Op::new("BIT 6, B", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x40, gr((&_r.bc, U)))
+        }));
+        ops[0x171] = Some(Op::new("BIT 6, C", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x40, gr((&_r.bc, D)))
+        }));
+        ops[0x172] = Some(Op::new("BIT 6, D", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x40, gr((&_r.de, U)))
+        }));
+        ops[0x173] = Some(Op::new("BIT 6, E", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x40, gr((&_r.de, D)))
+        }));
+        ops[0x174] = Some(Op::new("BIT 6, H", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x40, gr((&_r.hl, U)))
+        }));
+        ops[0x175] = Some(Op::new("BIT 6, L", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x40, gr((&_r.hl, D)))
+        }));
+        ops[0x176] = Some(Op::new("BIT 6, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x40, _m.get(grr(&_r.hl)))
+        }));
+        ops[0x177] = Some(Op::new("BIT 6, A", 2, (8, 0), |_r, _m, _p| -> bool {
+            let tmp = gr((&_r.af, U));
+            bit_msk_n(&mut _r.af, 0x40, tmp)
+        }));
+
+        ops[0x178] = Some(Op::new("BIT 7, B", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x80, gr((&_r.bc, U)))
+        }));
+        ops[0x179] = Some(Op::new("BIT 7, C", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x80, gr((&_r.bc, D)))
+        }));
+        ops[0x17a] = Some(Op::new("BIT 7, D", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x80, gr((&_r.de, U)))
+        }));
+        ops[0x17b] = Some(Op::new("BIT 7, E", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x80, gr((&_r.de, D)))
+        }));
+        ops[0x17c] = Some(Op::new("BIT 7, H", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x80, gr((&_r.hl, U)))
+        }));
+        ops[0x17d] = Some(Op::new("BIT 7, L", 2, (8, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x80, gr((&_r.hl, D)))
+        }));
+        ops[0x17e] = Some(Op::new("BIT 7, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            bit_msk_n(&mut _r.af, 0x80, _m.get(grr(&_r.hl)))
+        }));
+        ops[0x17f] = Some(Op::new("BIT 7, A", 2, (8, 0), |_r, _m, _p| -> bool {
+            let tmp = gr((&_r.af, U));
+            bit_msk_n(&mut _r.af, 0x80, tmp)
+        }));
+
+        ops[0x180] = Some(Op::new("RES 0, B", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x1, (&mut _r.bc, U))
+        }));
+        ops[0x181] = Some(Op::new("RES 0, C", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x1, (&mut _r.bc, D))
+        }));
+        ops[0x182] = Some(Op::new("RES 0, D", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x1, (&mut _r.de, U))
+        }));
+        ops[0x183] = Some(Op::new("RES 0, E", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x1, (&mut _r.de, D))
+        }));
+        ops[0x184] = Some(Op::new("RES 0, H", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x1, (&mut _r.hl, U))
+        }));
+        ops[0x185] = Some(Op::new("RES 0, L", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x1, (&mut _r.hl, D))
+        }));
+        ops[0x186] = Some(Op::new("RES 0, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            res_msk_arr(_m, 0x1, &_r.hl)
+        }));
+        ops[0x187] = Some(Op::new("RES 0, A", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x1, (&mut _r.af, U))
+        }));
+
+        ops[0x188] = Some(Op::new("RES 1, B", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x2, (&mut _r.bc, U))
+        }));
+        ops[0x189] = Some(Op::new("RES 1, C", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x2, (&mut _r.bc, D))
+        }));
+        ops[0x18a] = Some(Op::new("RES 1, D", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x2, (&mut _r.de, U))
+        }));
+        ops[0x18b] = Some(Op::new("RES 1, E", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x2, (&mut _r.de, D))
+        }));
+        ops[0x18c] = Some(Op::new("RES 1, H", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x2, (&mut _r.hl, U))
+        }));
+        ops[0x18d] = Some(Op::new("RES 1, L", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x2, (&mut _r.hl, D))
+        }));
+        ops[0x18e] = Some(Op::new("RES 1, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            res_msk_arr(_m, 0x2, &_r.hl)
+        }));
+        ops[0x18f] = Some(Op::new("RES 1, A", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x2, (&mut _r.af, U))
+        }));
+
+        ops[0x190] = Some(Op::new("RES 2, B", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x4, (&mut _r.bc, U))
+        }));
+        ops[0x191] = Some(Op::new("RES 2, C", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x4, (&mut _r.bc, D))
+        }));
+        ops[0x192] = Some(Op::new("RES 2, D", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x4, (&mut _r.de, U))
+        }));
+        ops[0x193] = Some(Op::new("RES 2, E", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x4, (&mut _r.de, D))
+        }));
+        ops[0x194] = Some(Op::new("RES 2, H", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x4, (&mut _r.hl, U))
+        }));
+        ops[0x195] = Some(Op::new("RES 2, L", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x4, (&mut _r.hl, D))
+        }));
+        ops[0x196] = Some(Op::new("RES 2, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            res_msk_arr(_m, 0x4, &_r.hl)
+        }));
+        ops[0x197] = Some(Op::new("RES 2, A", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x4, (&mut _r.af, U))
+        }));
+
+        ops[0x198] = Some(Op::new("RES 3, B", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x8, (&mut _r.bc, U))
+        }));
+        ops[0x199] = Some(Op::new("RES 3, C", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x8, (&mut _r.bc, D))
+        }));
+        ops[0x19a] = Some(Op::new("RES 3, D", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x8, (&mut _r.de, U))
+        }));
+        ops[0x19b] = Some(Op::new("RES 3, E", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x8, (&mut _r.de, D))
+        }));
+        ops[0x19c] = Some(Op::new("RES 3, H", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x8, (&mut _r.hl, U))
+        }));
+        ops[0x19d] = Some(Op::new("RES 3, L", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x8, (&mut _r.hl, D))
+        }));
+        ops[0x19e] = Some(Op::new("RES 3, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            res_msk_arr(_m, 0x8, &_r.hl)
+        }));
+        ops[0x19f] = Some(Op::new("RES 3, A", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x8, (&mut _r.af, U))
+        }));
+
+        ops[0x1a0] = Some(Op::new("RES 4, B", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x10, (&mut _r.bc, U))
+        }));
+        ops[0x1a1] = Some(Op::new("RES 4, C", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x10, (&mut _r.bc, D))
+        }));
+        ops[0x1a2] = Some(Op::new("RES 4, D", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x10, (&mut _r.de, U))
+        }));
+        ops[0x1a3] = Some(Op::new("RES 4, E", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x10, (&mut _r.de, D))
+        }));
+        ops[0x1a4] = Some(Op::new("RES 4, H", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x10, (&mut _r.hl, U))
+        }));
+        ops[0x1a5] = Some(Op::new("RES 4, L", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x10, (&mut _r.hl, D))
+        }));
+        ops[0x1a6] = Some(Op::new("RES 4, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            res_msk_arr(_m, 0x10, &_r.hl)
+        }));
+        ops[0x1a7] = Some(Op::new("RES 4, A", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x10, (&mut _r.af, U))
+        }));
+
+        ops[0x1a8] = Some(Op::new("RES 5, B", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x20, (&mut _r.bc, U))
+        }));
+        ops[0x1a9] = Some(Op::new("RES 5, C", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x20, (&mut _r.bc, D))
+        }));
+        ops[0x1aa] = Some(Op::new("RES 5, D", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x20, (&mut _r.de, U))
+        }));
+        ops[0x1ab] = Some(Op::new("RES 5, E", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x20, (&mut _r.de, D))
+        }));
+        ops[0x1ac] = Some(Op::new("RES 5, H", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x20, (&mut _r.hl, U))
+        }));
+        ops[0x1ad] = Some(Op::new("RES 5, L", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x20, (&mut _r.hl, D))
+        }));
+        ops[0x1ae] = Some(Op::new("RES 5, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            res_msk_arr(_m, 0x20, &_r.hl)
+        }));
+        ops[0x1af] = Some(Op::new("RES 5, A", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x20, (&mut _r.af, U))
+        }));
+
+        ops[0x1b0] = Some(Op::new("RES 6, B", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x40, (&mut _r.bc, U))
+        }));
+        ops[0x1b1] = Some(Op::new("RES 6, C", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x40, (&mut _r.bc, D))
+        }));
+        ops[0x1b2] = Some(Op::new("RES 6, D", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x40, (&mut _r.de, U))
+        }));
+        ops[0x1b3] = Some(Op::new("RES 6, E", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x40, (&mut _r.de, D))
+        }));
+        ops[0x1b4] = Some(Op::new("RES 6, H", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x40, (&mut _r.hl, U))
+        }));
+        ops[0x1b5] = Some(Op::new("RES 6, L", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x40, (&mut _r.hl, D))
+        }));
+        ops[0x1b6] = Some(Op::new("RES 6, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            res_msk_arr(_m, 0x40, &_r.hl)
+        }));
+        ops[0x1b7] = Some(Op::new("RES 6, A", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x40, (&mut _r.af, U))
+        }));
+
+        ops[0x1b8] = Some(Op::new("RES 7, B", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x80, (&mut _r.bc, U))
+        }));
+        ops[0x1b9] = Some(Op::new("RES 7, C", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x80, (&mut _r.bc, D))
+        }));
+        ops[0x1ba] = Some(Op::new("RES 7, D", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x80, (&mut _r.de, U))
+        }));
+        ops[0x1bb] = Some(Op::new("RES 7, E", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x80, (&mut _r.de, D))
+        }));
+        ops[0x1bc] = Some(Op::new("RES 7, H", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x80, (&mut _r.hl, U))
+        }));
+        ops[0x1bd] = Some(Op::new("RES 7, L", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x80, (&mut _r.hl, D))
+        }));
+        ops[0x1be] = Some(Op::new("RES 7, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            res_msk_arr(_m, 0x80, &_r.hl)
+        }));
+        ops[0x1bf] = Some(Op::new("RES 7, A", 2, (8, 0), |_r, _m, _p| -> bool {
+            res_msk_r(0x80, (&mut _r.af, U))
+        }));
+
+        ops[0x1c0] = Some(Op::new("SET 0, B", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x1, (&mut _r.bc, U))
+        }));
+        ops[0x1c1] = Some(Op::new("SET 0, C", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x1, (&mut _r.bc, D))
+        }));
+        ops[0x1c2] = Some(Op::new("SET 0, D", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x1, (&mut _r.de, U))
+        }));
+        ops[0x1c3] = Some(Op::new("SET 0, E", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x1, (&mut _r.de, D))
+        }));
+        ops[0x1c4] = Some(Op::new("SET 0, H", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x1, (&mut _r.hl, U))
+        }));
+        ops[0x1c5] = Some(Op::new("SET 0, L", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x1, (&mut _r.hl, D))
+        }));
+        ops[0x1c6] = Some(Op::new("SET 0, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            set_msk_arr(_m, 0x1, &_r.hl)
+        }));
+        ops[0x1c7] = Some(Op::new("SET 0, A", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x1, (&mut _r.af, U))
+        }));
+
+        ops[0x1c8] = Some(Op::new("SET 1, B", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x2, (&mut _r.bc, U))
+        }));
+        ops[0x1c9] = Some(Op::new("SET 1, C", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x2, (&mut _r.bc, D))
+        }));
+        ops[0x1ca] = Some(Op::new("SET 1, D", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x2, (&mut _r.de, U))
+        }));
+        ops[0x1cb] = Some(Op::new("SET 1, E", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x2, (&mut _r.de, D))
+        }));
+        ops[0x1cc] = Some(Op::new("SET 1, H", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x2, (&mut _r.hl, U))
+        }));
+        ops[0x1cd] = Some(Op::new("SET 1, L", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x2, (&mut _r.hl, D))
+        }));
+        ops[0x1ce] = Some(Op::new("SET 1, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            set_msk_arr(_m, 0x2, &_r.hl)
+        }));
+        ops[0x1cf] = Some(Op::new("SET 1, A", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x2, (&mut _r.af, U))
+        }));
+
+        ops[0x1d0] = Some(Op::new("SET 2, B", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x4, (&mut _r.bc, U))
+        }));
+        ops[0x1d1] = Some(Op::new("SET 2, C", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x4, (&mut _r.bc, D))
+        }));
+        ops[0x1d2] = Some(Op::new("SET 2, D", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x4, (&mut _r.de, U))
+        }));
+        ops[0x1d3] = Some(Op::new("SET 2, E", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x4, (&mut _r.de, D))
+        }));
+        ops[0x1d4] = Some(Op::new("SET 2, H", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x4, (&mut _r.hl, U))
+        }));
+        ops[0x1d5] = Some(Op::new("SET 2, L", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x4, (&mut _r.hl, D))
+        }));
+        ops[0x1d6] = Some(Op::new("SET 2, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            set_msk_arr(_m, 0x4, &_r.hl)
+        }));
+        ops[0x1d7] = Some(Op::new("SET 2, A", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x4, (&mut _r.af, U))
+        }));
+
+        ops[0x1d8] = Some(Op::new("SET 3, B", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x8, (&mut _r.bc, U))
+        }));
+        ops[0x1d9] = Some(Op::new("SET 3, C", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x8, (&mut _r.bc, D))
+        }));
+        ops[0x1da] = Some(Op::new("SET 3, D", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x8, (&mut _r.de, U))
+        }));
+        ops[0x1db] = Some(Op::new("SET 3, E", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x8, (&mut _r.de, D))
+        }));
+        ops[0x1dc] = Some(Op::new("SET 3, H", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x8, (&mut _r.hl, U))
+        }));
+        ops[0x1dd] = Some(Op::new("SET 3, L", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x8, (&mut _r.hl, D))
+        }));
+        ops[0x1de] = Some(Op::new("SET 3, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            set_msk_arr(_m, 0x8, &_r.hl)
+        }));
+        ops[0x1df] = Some(Op::new("SET 3, A", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x8, (&mut _r.af, U))
+        }));
+
+        ops[0x1e0] = Some(Op::new("SET 4, B", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x10, (&mut _r.bc, U))
+        }));
+        ops[0x1e1] = Some(Op::new("SET 4, C", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x10, (&mut _r.bc, D))
+        }));
+        ops[0x1e2] = Some(Op::new("SET 4, D", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x10, (&mut _r.de, U))
+        }));
+        ops[0x1e3] = Some(Op::new("SET 4, E", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x10, (&mut _r.de, D))
+        }));
+        ops[0x1e4] = Some(Op::new("SET 4, H", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x10, (&mut _r.hl, U))
+        }));
+        ops[0x1e5] = Some(Op::new("SET 4, L", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x10, (&mut _r.hl, D))
+        }));
+        ops[0x1e6] = Some(Op::new("SET 4, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            set_msk_arr(_m, 0x10, &_r.hl)
+        }));
+        ops[0x1e7] = Some(Op::new("SET 4, A", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x10, (&mut _r.af, U))
+        }));
+
+        ops[0x1e8] = Some(Op::new("SET 5, B", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x20, (&mut _r.bc, U))
+        }));
+        ops[0x1e9] = Some(Op::new("SET 5, C", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x20, (&mut _r.bc, D))
+        }));
+        ops[0x1ea] = Some(Op::new("SET 5, D", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x20, (&mut _r.de, U))
+        }));
+        ops[0x1eb] = Some(Op::new("SET 5, E", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x20, (&mut _r.de, D))
+        }));
+        ops[0x1ec] = Some(Op::new("SET 5, H", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x20, (&mut _r.hl, U))
+        }));
+        ops[0x1ed] = Some(Op::new("SET 5, L", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x20, (&mut _r.hl, D))
+        }));
+        ops[0x1ee] = Some(Op::new("SET 5, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            set_msk_arr(_m, 0x20, &_r.hl)
+        }));
+        ops[0x1ef] = Some(Op::new("SET 5, A", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x20, (&mut _r.af, U))
+        }));
+
+        ops[0x1f0] = Some(Op::new("SET 6, B", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x40, (&mut _r.bc, U))
+        }));
+        ops[0x1f1] = Some(Op::new("SET 6, C", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x40, (&mut _r.bc, D))
+        }));
+        ops[0x1f2] = Some(Op::new("SET 6, D", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x40, (&mut _r.de, U))
+        }));
+        ops[0x1f3] = Some(Op::new("SET 6, E", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x40, (&mut _r.de, D))
+        }));
+        ops[0x1f4] = Some(Op::new("SET 6, H", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x40, (&mut _r.hl, U))
+        }));
+        ops[0x1f5] = Some(Op::new("SET 6, L", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x40, (&mut _r.hl, D))
+        }));
+        ops[0x1f6] = Some(Op::new("SET 6, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            set_msk_arr(_m, 0x40, &_r.hl)
+        }));
+        ops[0x1f7] = Some(Op::new("SET 6, A", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x40, (&mut _r.af, U))
+        }));
+
+        ops[0x1f8] = Some(Op::new("SET 7, B", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x80, (&mut _r.bc, U))
+        }));
+        ops[0x1f9] = Some(Op::new("SET 7, C", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x80, (&mut _r.bc, D))
+        }));
+        ops[0x1fa] = Some(Op::new("SET 7, D", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x80, (&mut _r.de, U))
+        }));
+        ops[0x1fb] = Some(Op::new("SET 7, E", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x80, (&mut _r.de, D))
+        }));
+        ops[0x1fc] = Some(Op::new("SET 7, H", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x80, (&mut _r.hl, U))
+        }));
+        ops[0x1fd] = Some(Op::new("SET 7, L", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x80, (&mut _r.hl, D))
+        }));
+        ops[0x1fe] = Some(Op::new("SET 7, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+            set_msk_arr(_m, 0x80, &_r.hl)
+        }));
+        ops[0x1ff] = Some(Op::new("SET 7, A", 2, (8, 0), |_r, _m, _p| -> bool {
+            set_msk_r(0x80, (&mut _r.af, U))
+        }));
+
         Ops(ops)
     }
 
