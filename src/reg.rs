@@ -84,10 +84,10 @@ impl fmt::Display for Regs {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "-----------------------------------------------------\n\
-            A=0x{:02x}     Z={:5}    N={:5}    H={:5}    CY={:5}\n\
+            "-------------------------------------------------------\n \
+            A=0x{:02x}     Z={:5}    N={:5}    H={:5}    CY={:5}\n \
             BC=0x{:04x}  DE=0x{:04x}  HL=0x{:04x}  PC=0x{:04x}  SP=0x{:04x}\n\
-            -----------------------------------------------------",
+            -------------------------------------------------------",
             api::gr((&self.af, api::U)),
             api::gf((&self.af, api::Z)),
             api::gf((&self.af, api::N)),
@@ -236,13 +236,11 @@ mod tests {
         regs.af.set_8(U, 0xff);
         assert_eq!(regs.af.get_16(), 0xff00);
         assert_eq!(regs.af.get_8(U), 0xff);
-
         assert_eq!(regs.af.get_bit(Z), false);
         regs.af.set_bit(Z, true);
         assert_eq!(regs.af.get_bit(Z), true);
         regs.af.set_bit(Z, false);
         assert_eq!(regs.af.get_bit(Z), false);
-
         assert_eq!(regs.sp.get_8(D), 0);
         regs.sp.set_8(D, 0xff);
         assert_eq!(regs.sp.get_16(), 0xff);

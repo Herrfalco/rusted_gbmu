@@ -5,40 +5,17 @@ use crate::utils::*;
 use lazy_regex::regex;
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
-use regex::{Captures, Regex};
+use regex::Regex;
 use std::process::exit;
+use std::str::FromStr;
 use text_io::read;
-
-/*
-fn main() {
-    let entry = "g (0x0245)";
-
-    if let Some(p) = g_r.captures(entry) {
-    } else if let Some(p) = g_rr.captures(entry) {
-    } else if let Some(p) = g_arr.captures(entry) {
-    } else if let Some(p) = g_ann.captures(entry) {
-    } else if let Some(p) = s_rr_nn.captures(entry) {
-    } else if let Some(p) = s_r_n.captures(entry) {
-    } else if let Some(p) = s_arr_n.captures(entry) {
-    } else if let Some(p) = s_ann_n.captures(entry) {
-    } else if let Some(_) = b_lst.captures(entry) {
-    } else if let Some(p) = b_add.captures(entry) {
-    } else if let Some(p) = b_del.captures(entry) {
-    } else if let Some(_) = b_nxt.captures(entry) {
-    } else if let Some(_) = r_shw.captures(entry) {
-    } else if let Some(_) = r_a_shw.captures(entry) {
-    } else if let Some(_) = exit.captures(entry) {
-    }
-}
-*/
 
 #[derive(PartialEq, FromPrimitive)]
 enum Cmd {
     NI,
-    GR,
-    GRr,
-    GArr,
-    GAnn,
+    PMRr,
+    PMNn,
+    SFb,
     SRrNn,
     SRN,
     SArrN,
@@ -65,14 +42,13 @@ impl<'a> Debugger {
         Debugger {
             rgxs: vec![
                 regex!(r#"^$"#i),
-                regex!(r#"^g ([afbcdehl])$"#i),
-                regex!(r#"^g ((?:af)|(?:bc)|(?:de)|(?:hl)|(?:pc)|(?:sp))$"#i),
-                regex!(r#"^g \(((?:af)|(?:bc)|(?:de)|(?:hl)|(?:pc)|(?:sp))\)$"#i),
-                regex!(r#"^g \(0x([[:xdigit:]]{1,4})\)$"#i),
-                regex!(r#"^s ((?:af)|(?:bc)|(?:de)|(?:hl)|(?:pc)|(?:sp)) 0x([[:xdigit:]]{1,4})$"#i),
-                regex!(r#"^s ([afbcdehl]) 0x([[:xdigit:]]{1,2})$"#i),
-                regex!(r#"^s \(((?:af)|(?:bc)|(?:de)|(?:hl)|(?:pc)|(?:sp))\) 0x([[:xdigit:]]{1,2})$"#i),
-                regex!(r#"^s \(0x([[:xdigit:]]{1,4})\) 0x([[:xdigit:]]{1,2})$"#i),
+                regex!(r#"^([[:digit:]]*)\s*\(((?:af)|(?:bc)|(?:de)|(?:hl)|(?:pc)|(?:sp))\)$"#i),
+                regex!(r#"^([[:digit:]]*)\s*\(0x([[:xdigit:]]{1,4})\)$"#i),
+                regex!(r#"^([znh]|(?:cy))\s*=\s*(true|false)$"#i),
+                regex!(r#"^((?:af)|(?:bc)|(?:de)|(?:hl)|(?:pc)|(?:sp))\s*=\s*0x([[:xdigit:]]{1,4})$"#i),
+                regex!(r#"^([afbcdehl])\s*=\s*0x([[:xdigit:]]{1,2})$"#i),
+                regex!(r#"^\(((?:af)|(?:bc)|(?:de)|(?:hl)|(?:pc)|(?:sp))\)\s*=\s*0x([[:xdigit:]]{1,2})$"#i),
+                regex!(r#"^\(0x([[:xdigit:]]{1,4})\)\s*=\s*0x([[:xdigit:]]{1,2})$"#i),
                 regex!(r#"^b$"#i),
                 regex!(r#"^b add 0x([[:xdigit:]]{1,4})$"#i),
                 regex!(r#"^b del ([[:digit:]]+)$"#i),
@@ -128,6 +104,27 @@ impl<'a> Debugger {
         }
     }
 
+    fn f_by_nm(nm: &str) -> Option<u16> {
+        match nm {
+            "z" => Some(Z),
+            "n" => Some(N),
+            "h" => Some(H),
+            "cy" => Some(CY),
+            _ => None,
+        }
+    }
+
+    fn mem_dump(m: &Mem, addr: u16, len: usize) {
+        println!("-------------------------------------------------------");
+        for i in 0..len as u16 {
+            if i % 16 == 0 {
+                print!("{}0x{:04x}: ", if i != 0 { "\n" } else { "" }, i + addr);
+            }
+            print!("{:02x} ", m.get(i + addr));
+        }
+        println!("\n-------------------------------------------------------");
+    }
+
     fn get_cmd(&mut self, m: &mut Mem, r: &mut Regs) {
         let mut entry: String;
 
@@ -137,22 +134,28 @@ impl<'a> Debugger {
             if let Some((cmd, par)) = self.parse_cmd(&entry[..]) {
                 match cmd {
                     Cmd::NI => break,
-                    Cmd::GR => {
-                        let tmp = Debugger::r_by_nm(r, &par[0]).unwrap();
-                        println!("0x{:02x}", gr((tmp.0, tmp.1)));
+                    Cmd::SFb => {
+                        let tmp = Debugger::f_by_nm(&par[0]).unwrap();
+                        sf((&mut r.af, tmp), bool::from_str(&par[1]).unwrap());
                     }
-                    Cmd::GRr => {
-                        let tmp = Debugger::rr_by_nm(r, &par[0]).unwrap();
-                        println!("0x{:04x}", grr(tmp));
-                    }
-                    Cmd::GArr => {
-                        let tmp = Debugger::rr_by_nm(r, &par[0]).unwrap();
-                        println!("0x{:02x}", m.get(grr(tmp)));
-                    }
-                    Cmd::GAnn => {
-                        let tmp = u16::from_str_radix(&par[0], 16).unwrap();
-                        println!("0x{:02x}", m.get(tmp));
-                    }
+                    Cmd::PMRr => Debugger::mem_dump(
+                        m,
+                        grr(Debugger::rr_by_nm(r, &par[1]).unwrap()),
+                        if par[0].len() == 0 {
+                            1
+                        } else {
+                            usize::from_str_radix(&par[0], 10).unwrap()
+                        },
+                    ),
+                    Cmd::PMNn => Debugger::mem_dump(
+                        m,
+                        u16::from_str_radix(&par[1], 16).unwrap(),
+                        if par[0].len() == 0 {
+                            1
+                        } else {
+                            usize::from_str_radix(&par[0], 10).unwrap()
+                        },
+                    ),
                     Cmd::SRrNn => {
                         let tmp1 = Debugger::rr_by_nm(r, &par[0]).unwrap();
                         let tmp2 = u16::from_str_radix(&par[1], 16).unwrap();
@@ -174,9 +177,14 @@ impl<'a> Debugger {
                         m.set(tmp1, tmp2);
                     }
                     Cmd::BLst => {
+                        println!("-------------------------------------------------------");
+                        if self.brks.len() == 0 {
+                            println!("None");
+                        }
                         for (idx, brk) in self.brks.iter().enumerate() {
                             println!("{}: 0x{:04x}", idx, brk);
                         }
+                        println!("-------------------------------------------------------");
                     }
                     Cmd::BAdd => {
                         let tmp = u16::from_str_radix(&par[0], 16).unwrap();
@@ -243,47 +251,40 @@ mod tests {
             "",
             "   ",
             "\t",
-            " g a",
-            "g a",
-            "g ",
-            "ga",
-            "g f",
-            "g e",
-            "g s",
-            "g sp",
-            "g sp ",
-            "g pc",
-            "h pc",
-            "g (sp)",
-            "g (af)",
-            "g (ac)",
-            "g (a)",
-            "g (ff)",
-            "g (0xff)",
-            "g 0x(ff)",
-            "g 0x()",
-            "g (0x)",
-            "g (0xdead)",
-            "g (0xdead0)",
-            "s (0xdead)",
-            "s af 0xdead",
-            "s af 0xdaaad",
-            "s bc 0xd",
-            "s de 0x",
-            "s d 0x",
-            "s d 0x00",
-            "s e 0x0f",
-            "s s 0x0f",
-            "s e 0x0fa",
-            "s e 0x0fdead",
-            "s (sp) 0x00",
-            "s (af) 0xfffff",
-            "s (ac) 0x10",
-            "s (0xff) 0x10",
-            "s (0xfffff) 0x10",
-            "s (0x) 0x10",
-            "s (0xff) 0xfff",
-            "s (0xff) 0x",
+            "100 (0xff)",
+            "(0xff)",
+            "100 (0xfffff)",
+            "af (0xfffff)",
+            "(0xffffff)",
+            "100 (af)",
+            "(hl)",
+            "100 (a)",
+            "af (rn)",
+            "(rn)",
+            "Z =false",
+            "cy= true",
+            "h=true",
+            "r = true",
+            "n=tru",
+            "=(0xdead)",
+            "af =0xdead",
+            "af= 0xdaaad",
+            "bc = 0xd",
+            "de=  0x",
+            "d =0x",
+            "d=   0x00",
+            "e =0x0f",
+            "s =0x0f",
+            "e = 0x0fa",
+            "e = 0x0fdead",
+            "(sp)=0x00",
+            "(af) =0xfffff",
+            "(ac) = 0x10",
+            "(0xff)=  0x10",
+            "(0xfffff) =0x10",
+            "(0x)=0x10",
+            "(0xff) =0xfff",
+            "(0xff) =0x",
             "b",
             " b",
             "b add sp",
@@ -307,27 +308,20 @@ mod tests {
             (true, Cmd::NI, vec![]),
             (false, Cmd::Unknown, vec![]),
             (false, Cmd::Unknown, vec![]),
-            (false, Cmd::Unknown, vec![]),
-            (true, Cmd::GR, vec!["a"]),
-            (false, Cmd::Unknown, vec![]),
-            (false, Cmd::Unknown, vec![]),
-            (true, Cmd::GR, vec!["f"]),
-            (true, Cmd::GR, vec!["e"]),
-            (false, Cmd::Unknown, vec![]),
-            (true, Cmd::GRr, vec!["sp"]),
-            (false, Cmd::Unknown, vec![]),
-            (true, Cmd::GRr, vec!["pc"]),
-            (false, Cmd::Unknown, vec![]),
-            (true, Cmd::GArr, vec!["sp"]),
-            (true, Cmd::GArr, vec!["af"]),
+            (true, Cmd::PMNn, vec!["100", "ff"]),
+            (true, Cmd::PMNn, vec!["", "ff"]),
             (false, Cmd::Unknown, vec![]),
             (false, Cmd::Unknown, vec![]),
             (false, Cmd::Unknown, vec![]),
-            (true, Cmd::GAnn, vec!["ff"]),
+            (true, Cmd::PMRr, vec!["100", "af"]),
+            (true, Cmd::PMRr, vec!["", "hl"]),
             (false, Cmd::Unknown, vec![]),
             (false, Cmd::Unknown, vec![]),
             (false, Cmd::Unknown, vec![]),
-            (true, Cmd::GAnn, vec!["dead"]),
+            (true, Cmd::SFb, vec!["z", "false"]),
+            (true, Cmd::SFb, vec!["cy", "true"]),
+            (true, Cmd::SFb, vec!["h", "true"]),
+            (false, Cmd::Unknown, vec![]),
             (false, Cmd::Unknown, vec![]),
             (false, Cmd::Unknown, vec![]),
             (true, Cmd::SRrNn, vec!["af", "dead"]),
@@ -370,7 +364,7 @@ mod tests {
         for (idx, entry) in ents.iter().enumerate() {
             if let Some((cmd, par)) = dbg.parse_cmd(&entry[..]) {
                 if !res[idx].0 || res[idx].1 != cmd {
-                    panic!();
+                    panic!("nb:{}", idx);
                 }
                 for (i, p) in par.iter().enumerate() {
                     assert_eq!(&res[idx].2[i], p);
