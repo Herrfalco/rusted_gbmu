@@ -6,9 +6,10 @@ use lazy_regex::regex;
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
 use regex::Regex;
+use rustyline::error::ReadlineError;
+use rustyline::Editor;
 use std::process::exit;
 use std::str::FromStr;
-use text_io::read;
 
 #[derive(PartialEq, FromPrimitive)]
 enum Cmd {
@@ -32,6 +33,7 @@ enum Cmd {
 
 pub struct Debugger {
     rgxs: Vec<&'static Regex>,
+    edit: Editor<()>,
     debug: bool,
     brks: Vec<u16>,
     sbys: bool,
@@ -57,6 +59,7 @@ impl<'a> Debugger {
                 regex!(r#"^ra$"#i),
                 regex!(r#"^exit$"#i),
             ],
+            edit: Editor::new(),
             debug,
             brks: Vec::new(),
             sbys: true,
@@ -126,11 +129,16 @@ impl<'a> Debugger {
     }
 
     fn get_cmd(&mut self, m: &mut Mem, r: &mut Regs) {
+        let mut line: Result<String, ReadlineError>;
         let mut entry: String;
 
         loop {
-            pflush("> ");
-            entry = read!("{}\n");
+            line = self.edit.readline("> ");
+            entry = match line {
+                Ok(s) => s,
+                _ => continue,
+            };
+            self.edit.add_history_entry(&entry);
             if let Some((cmd, par)) = self.parse_cmd(&entry[..]) {
                 match cmd {
                     Cmd::NI => break,
