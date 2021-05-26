@@ -8,3 +8,7 @@ edition = "2018"
 
 [dependencies]
 text_io = "0.1.8"
+lazy-regex = "2.0.1"
+regex = "1.5.4"
+num-traits = "0.2.14"
+num-derive = "0.3.3"
