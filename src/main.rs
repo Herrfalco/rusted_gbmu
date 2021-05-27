@@ -51,56 +51,60 @@ fn handl_int(m: &mut Mem, r: &mut Regs) -> usize {
 }
 
 fn main() {
-    let args: Vec<String> = env::args().skip(1).collect();
-    if args.len() != 1 {
-        fatal_err("Need a rom file as argument", 1);
-    }
-
-    let mut mem = Mem::new();
-    if let Err(msg) = mem.load_rom(0x8000, Path::new(&args[0])) {
-        fatal_err(msg, 2);
-    }
-    mem.init_spe_reg();
-
-    let mut regs = Regs::new();
-    regs.init();
-
-    let ops = Ops::new();
     let mut dbg = Debugger::new(DEBUG);
 
-    let mut disp = Display::new();
-
-    let mut opcode: u8;
-    let mut op: &Op;
-    let mut param: u16;
-    let mut tmp: u16;
-    let mut cycles: usize = 0;
-    loop {
-        if cycles == 0 {
-            if grr(&regs.ime) == 1 && ((mem.get(IE) & 0x1f) & (mem.get(IF) & 0x1f)) != 0 {
-                cycles = handl_int(&mut mem, &mut regs);
-            } else {
-                opcode = read_opcode(&mem, &mut regs.pc);
-                op = &ops.get(opcode as usize).unwrap_or_else(|| {
-                    fatal_err(&format!("Opcode 0x{:02x} not implemented", opcode), 3)
-                });
-                param = read_param(&mem, &mut regs.pc, op.len());
-                dbg.run(&mut mem, &mut regs, op, param);
-                tmp = grr(&regs.pc).wrapping_add(op.len() as u16);
-                srr(&mut regs.pc, tmp);
-                cycles = if op.exec(&mut regs, &mut mem, param) {
-                    op.cycles.0
-                } else {
-                    op.cycles.1
-                } / 4
-                    - 1;
-                if grr(&regs.ime) > 1 {
-                    dec_rr(&mut regs.ime);
-                }
-            }
-        } else {
-            cycles -= 1;
+    'restart: loop {
+        let args: Vec<String> = env::args().skip(1).collect();
+        if args.len() != 1 {
+            fatal_err("Need a rom file as argument", 1);
         }
-        disp.update(&mut mem);
+
+        let mut mem = Mem::new();
+        if let Err(msg) = mem.load_rom(0x8000, Path::new(&args[0])) {
+            fatal_err(msg, 2);
+        }
+        mem.init_spe_reg();
+
+        let mut regs = Regs::new();
+        regs.init();
+
+        let ops = Ops::new();
+        let mut disp = Display::new();
+
+        let mut opcode: u8;
+        let mut op: &Op;
+        let mut param: u16;
+        let mut tmp: u16;
+        let mut cycles: usize = 0;
+        loop {
+            if cycles == 0 {
+                if grr(&regs.ime) == 1 && ((mem.get(IE) & 0x1f) & (mem.get(IF) & 0x1f)) != 0 {
+                    cycles = handl_int(&mut mem, &mut regs);
+                } else {
+                    opcode = read_opcode(&mem, &mut regs.pc);
+                    op = &ops.get(opcode as usize).unwrap_or_else(|| {
+                        fatal_err(&format!("Opcode 0x{:02x} not implemented", opcode), 3)
+                    });
+                    param = read_param(&mem, &mut regs.pc, op.len());
+                    if !dbg.run(&mut mem, &mut regs, op, param) {
+                        continue 'restart;
+                    }
+                    tmp = grr(&regs.pc).wrapping_add(op.len() as u16);
+                    srr(&mut regs.pc, tmp);
+                    cycles = if op.exec(&mut regs, &mut mem, param) {
+                        op.cycles.0
+                    } else {
+                        op.cycles.1
+                    } / 4
+                        - 1;
+                    if grr(&regs.ime) > 1 {
+                        dec_rr(&mut regs.ime);
+                    }
+                }
+            } else {
+                cycles -= 1;
+            }
+            disp.update(&mut mem);
+        }
     }
 }

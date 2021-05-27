@@ -14,6 +14,7 @@ use std::str::FromStr;
 #[derive(PartialEq, FromPrimitive)]
 enum Cmd {
     NI,
+    Res,
     PMRr,
     PMNn,
     SFb,
@@ -44,6 +45,7 @@ impl<'a> Debugger {
         Debugger {
             rgxs: vec![
                 regex!(r#"^$"#i),
+                regex!(r#"^!$"#i),
                 regex!(r#"^([[:digit:]]*)\s*\(((?:af)|(?:bc)|(?:de)|(?:hl)|(?:pc)|(?:sp))\)$"#i),
                 regex!(r#"^([[:digit:]]*)\s*\(0x([[:xdigit:]]{1,4})\)$"#i),
                 regex!(r#"^([znh]|(?:cy))\s*=\s*(true|false)$"#i),
@@ -128,7 +130,7 @@ impl<'a> Debugger {
         println!("\n-------------------------------------------------------");
     }
 
-    fn get_cmd(&mut self, m: &mut Mem, r: &mut Regs) {
+    fn get_cmd(&mut self, m: &mut Mem, r: &mut Regs) -> bool {
         let mut line: Result<String, ReadlineError>;
         let mut entry: String;
 
@@ -144,6 +146,7 @@ impl<'a> Debugger {
             if let Some((cmd, par)) = self.parse_cmd(&entry[..]) {
                 match cmd {
                     Cmd::NI => break,
+                    Cmd::Res => return false,
                     Cmd::SFb => {
                         let tmp = Debugger::f_by_nm(&par[0]).unwrap();
                         sf((&mut r.af, tmp), bool::from_str(&par[1]).unwrap());
@@ -225,9 +228,10 @@ impl<'a> Debugger {
                 println!("Error: Unknown command");
             }
         }
+        true
     }
 
-    pub fn run(&mut self, m: &mut Mem, r: &mut Regs, op: &Op, p: u16) {
+    pub fn run(&mut self, m: &mut Mem, r: &mut Regs, op: &Op, p: u16) -> bool {
         if self.debug {
             if self.sbys || self.brks.contains(&grr(&r.pc)) {
                 self.sbys = true;
@@ -245,9 +249,10 @@ impl<'a> Debugger {
                     grr(&r.pc),
                     format!("{}", op).replace("#", &fm_par)
                 );
-                self.get_cmd(m, r);
+                return self.get_cmd(m, r);
             }
         }
+        true
     }
 }
 
@@ -260,6 +265,7 @@ mod tests {
         let dbg = Debugger::new(true);
         let ents = vec![
             "",
+            "!",
             "   ",
             "\t",
             "100 (0xff)",
@@ -317,6 +323,7 @@ mod tests {
         ];
         let res = vec![
             (true, Cmd::NI, vec![]),
+            (true, Cmd::Res, vec![]),
             (false, Cmd::Unknown, vec![]),
             (false, Cmd::Unknown, vec![]),
             (true, Cmd::PMNn, vec!["100", "ff"]),

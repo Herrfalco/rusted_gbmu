@@ -86,7 +86,7 @@ impl fmt::Display for Regs {
             f,
             "-------------------------------------------------------\n \
             A=0x{:02x}     Z={:5}    N={:5}    H={:5}    CY={:5}\n \
-            BC=0x{:04x}  DE=0x{:04x}  HL=0x{:04x}  PC=0x{:04x}  SP=0x{:04x}\n\
+            BC=0x{:04x}  DE=0x{:04x}  HL=0x{:04x}  SP=0x{:04x}  PC=0x{:04x}\n\
             -------------------------------------------------------",
             api::gr((&self.af, api::U)),
             api::gf((&self.af, api::Z)),
@@ -96,8 +96,8 @@ impl fmt::Display for Regs {
             api::grr(&self.bc),
             api::grr(&self.de),
             api::grr(&self.hl),
+            api::grr(&self.sp),
             api::grr(&self.pc),
-            api::grr(&self.sp)
         )
     }
 }
