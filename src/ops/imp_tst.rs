@@ -19,15 +19,15 @@ fn ld_8() {
     srr(&mut af, 0x4040);
     ld_r_n((&mut bc, D), gr((&af, U)));
     assert_eq!(grr(&bc), 0x3040);
-    ld_arr_n(&mut mem, &hl, 0x66);
+    ld_ann_n(&mut mem, grr(&hl), 0x66);
     ld_r_ann(&mut mem, (&mut bc, D), grr(&hl));
     assert_eq!(grr(&bc), 0x3066);
     mem.set(0x33, 0x33);
     ld_r_ann(&mut mem, (&mut bc, U), 0x33);
     assert_eq!(grr(&bc), 0x3366);
-    ld_arr_n(&mut mem, &bc, gr((&af, U)));
+    ld_ann_n(&mut mem, grr(&bc), gr((&af, U)));
     assert_eq!(mem.get(grr(&bc)), 0x40);
-    ld_ann_r(&mut mem, 0xfff, (&af, U));
+    ld_ann_n(&mut mem, 0xfff, gr((&af, U)));
     assert_eq!(mem.get(0xfff), 0x40);
     ldh_an_r(&mut mem, 0x10, (&af, U));
     assert_eq!(mem.get(0xff10), 0x40);

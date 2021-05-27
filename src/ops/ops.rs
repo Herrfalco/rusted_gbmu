@@ -55,10 +55,10 @@ impl Ops {
 
         ///////////////////////// 8 BITS LOADS ///////////////////////////
         ops[0x02] = Some(Op::new("LD (BC), A", 1, (8, 0), |_r, _m, _p| -> bool {
-            ld_arr_n(_m, &mut _r.bc, gr((&_r.af, U)))
+            ld_ann_n(_m, grr(&_r.bc), gr((&_r.af, U)))
         }));
         ops[0x12] = Some(Op::new("LD (DE), A", 1, (8, 0), |_r, _m, _p| -> bool {
-            ld_arr_n(_m, &mut _r.de, gr((&_r.af, U)))
+            ld_ann_n(_m, grr(&_r.de), gr((&_r.af, U)))
         }));
         ops[0x22] = Some(Op::new("LD (HL+), A", 1, (8, 0), |_r, _m, _p| -> bool {
             ld_arri_r(_m, &mut _r.hl, (&_r.af, U))
@@ -77,7 +77,7 @@ impl Ops {
             ld_r_n((&mut _r.hl, U), _p as u8)
         }));
         ops[0x36] = Some(Op::new("LD (HL), #", 2, (12, 0), |_r, _m, _p| -> bool {
-            ld_arr_n(_m, &_r.hl, _p as u8)
+            ld_ann_n(_m, grr(&_r.hl), _p as u8)
         }));
 
         ops[0x0a] = Some(Op::new("LD A, (BC)", 1, (8, 0), |_r, _m, _p| -> bool {
@@ -253,25 +253,25 @@ impl Ops {
         }));
 
         ops[0x70] = Some(Op::new("LD (HL), B", 1, (8, 0), |_r, _m, _p| -> bool {
-            ld_arr_n(_m, &_r.hl, gr((&_r.bc, U)))
+            ld_ann_n(_m, grr(&_r.hl), gr((&_r.bc, U)))
         }));
         ops[0x71] = Some(Op::new("LD (HL), C", 1, (8, 0), |_r, _m, _p| -> bool {
-            ld_arr_n(_m, &_r.hl, gr((&_r.bc, D)))
+            ld_ann_n(_m, grr(&_r.hl), gr((&_r.bc, D)))
         }));
         ops[0x72] = Some(Op::new("LD (HL), D", 1, (8, 0), |_r, _m, _p| -> bool {
-            ld_arr_n(_m, &_r.hl, gr((&_r.de, U)))
+            ld_ann_n(_m, grr(&_r.hl), gr((&_r.de, U)))
         }));
         ops[0x73] = Some(Op::new("LD (HL), E", 1, (8, 0), |_r, _m, _p| -> bool {
-            ld_arr_n(_m, &_r.hl, gr((&_r.de, D)))
+            ld_ann_n(_m, grr(&_r.hl), gr((&_r.de, D)))
         }));
         ops[0x74] = Some(Op::new("LD (HL), H", 1, (8, 0), |_r, _m, _p| -> bool {
-            ld_arr_n(_m, &_r.hl, gr((&_r.hl, U)))
+            ld_ann_n(_m, grr(&_r.hl), gr((&_r.hl, U)))
         }));
         ops[0x75] = Some(Op::new("LD (HL), L", 1, (8, 0), |_r, _m, _p| -> bool {
-            ld_arr_n(_m, &_r.hl, gr((&_r.hl, D)))
+            ld_ann_n(_m, grr(&_r.hl), gr((&_r.hl, D)))
         }));
         ops[0x77] = Some(Op::new("LD (HL), A", 1, (8, 0), |_r, _m, _p| -> bool {
-            ld_arr_n(_m, &_r.hl, gr((&_r.af, U)))
+            ld_ann_n(_m, grr(&_r.hl), gr((&_r.af, U)))
         }));
 
         ops[0x78] = Some(Op::new("LD A, B", 1, (4, 0), |_r, _m, _p| -> bool {
@@ -304,15 +304,15 @@ impl Ops {
             ldh_r_an(_m, (&mut _r.af, U), _p as u8)
         }));
 
-        ops[0xe2] = Some(Op::new("LDH (C), A", 2, (8, 0), |_r, _m, _p| -> bool {
-            ldh_ar_r(_m, (&_r.bc, D), (&_r.af, U))
+        ops[0xe2] = Some(Op::new("LDH (C), A", 1, (8, 0), |_r, _m, _p| -> bool {
+            ldh_an_r(_m, gr((&_r.bc, D)), (&_r.af, U))
         }));
-        ops[0xf2] = Some(Op::new("LDH A, (C)", 2, (8, 0), |_r, _m, _p| -> bool {
+        ops[0xf2] = Some(Op::new("LDH A, (C)", 1, (8, 0), |_r, _m, _p| -> bool {
             ldh_r_an(_m, (&mut _r.af, U), gr((&_r.bc, D)))
         }));
 
         ops[0xea] = Some(Op::new("LD (#), A", 3, (16, 0), |_r, _m, _p| -> bool {
-            ld_ann_r(_m, _p, (&_r.af, U))
+            ld_ann_n(_m, _p, gr((&_r.af, U)))
         }));
         ops[0xfa] = Some(Op::new("LD A, (#)", 3, (16, 0), |_r, _m, _p| -> bool {
             ld_r_ann(_m, (&mut _r.af, U), _p)
@@ -1060,7 +1060,7 @@ impl Ops {
         ops[0x145] = Some(Op::new("BIT 0, L", 2, (8, 0), |_r, _m, _p| -> bool {
             bit_msk_n(&mut _r.af, 0x1, gr((&_r.hl, D)))
         }));
-        ops[0x146] = Some(Op::new("BIT 0, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+        ops[0x146] = Some(Op::new("BIT 0, (HL)", 2, (12, 0), |_r, _m, _p| -> bool {
             bit_msk_n(&mut _r.af, 0x1, _m.get(grr(&_r.hl)))
         }));
         ops[0x147] = Some(Op::new("BIT 0, A", 2, (8, 0), |_r, _m, _p| -> bool {
@@ -1086,7 +1086,7 @@ impl Ops {
         ops[0x14d] = Some(Op::new("BIT 1, L", 2, (8, 0), |_r, _m, _p| -> bool {
             bit_msk_n(&mut _r.af, 0x2, gr((&_r.hl, D)))
         }));
-        ops[0x14e] = Some(Op::new("BIT 1, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+        ops[0x14e] = Some(Op::new("BIT 1, (HL)", 2, (12, 0), |_r, _m, _p| -> bool {
             bit_msk_n(&mut _r.af, 0x2, _m.get(grr(&_r.hl)))
         }));
         ops[0x14f] = Some(Op::new("BIT 1, A", 2, (8, 0), |_r, _m, _p| -> bool {
@@ -1112,7 +1112,7 @@ impl Ops {
         ops[0x155] = Some(Op::new("BIT 2, L", 2, (8, 0), |_r, _m, _p| -> bool {
             bit_msk_n(&mut _r.af, 0x4, gr((&_r.hl, D)))
         }));
-        ops[0x156] = Some(Op::new("BIT 2, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+        ops[0x156] = Some(Op::new("BIT 2, (HL)", 2, (12, 0), |_r, _m, _p| -> bool {
             bit_msk_n(&mut _r.af, 0x4, _m.get(grr(&_r.hl)))
         }));
         ops[0x157] = Some(Op::new("BIT 2, A", 2, (8, 0), |_r, _m, _p| -> bool {
@@ -1138,7 +1138,7 @@ impl Ops {
         ops[0x15d] = Some(Op::new("BIT 3, L", 2, (8, 0), |_r, _m, _p| -> bool {
             bit_msk_n(&mut _r.af, 0x8, gr((&_r.hl, D)))
         }));
-        ops[0x15e] = Some(Op::new("BIT 3, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+        ops[0x15e] = Some(Op::new("BIT 3, (HL)", 2, (12, 0), |_r, _m, _p| -> bool {
             bit_msk_n(&mut _r.af, 0x8, _m.get(grr(&_r.hl)))
         }));
         ops[0x15f] = Some(Op::new("BIT 3, A", 2, (8, 0), |_r, _m, _p| -> bool {
@@ -1164,7 +1164,7 @@ impl Ops {
         ops[0x165] = Some(Op::new("BIT 4, L", 2, (8, 0), |_r, _m, _p| -> bool {
             bit_msk_n(&mut _r.af, 0x10, gr((&_r.hl, D)))
         }));
-        ops[0x166] = Some(Op::new("BIT 4, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+        ops[0x166] = Some(Op::new("BIT 4, (HL)", 2, (12, 0), |_r, _m, _p| -> bool {
             bit_msk_n(&mut _r.af, 0x10, _m.get(grr(&_r.hl)))
         }));
         ops[0x167] = Some(Op::new("BIT 4, A", 2, (8, 0), |_r, _m, _p| -> bool {
@@ -1190,7 +1190,7 @@ impl Ops {
         ops[0x16d] = Some(Op::new("BIT 5, L", 2, (8, 0), |_r, _m, _p| -> bool {
             bit_msk_n(&mut _r.af, 0x20, gr((&_r.hl, D)))
         }));
-        ops[0x16e] = Some(Op::new("BIT 5, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+        ops[0x16e] = Some(Op::new("BIT 5, (HL)", 2, (12, 0), |_r, _m, _p| -> bool {
             bit_msk_n(&mut _r.af, 0x20, _m.get(grr(&_r.hl)))
         }));
         ops[0x16f] = Some(Op::new("BIT 5, A", 2, (8, 0), |_r, _m, _p| -> bool {
@@ -1216,7 +1216,7 @@ impl Ops {
         ops[0x175] = Some(Op::new("BIT 6, L", 2, (8, 0), |_r, _m, _p| -> bool {
             bit_msk_n(&mut _r.af, 0x40, gr((&_r.hl, D)))
         }));
-        ops[0x176] = Some(Op::new("BIT 6, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+        ops[0x176] = Some(Op::new("BIT 6, (HL)", 2, (12, 0), |_r, _m, _p| -> bool {
             bit_msk_n(&mut _r.af, 0x40, _m.get(grr(&_r.hl)))
         }));
         ops[0x177] = Some(Op::new("BIT 6, A", 2, (8, 0), |_r, _m, _p| -> bool {
@@ -1242,7 +1242,7 @@ impl Ops {
         ops[0x17d] = Some(Op::new("BIT 7, L", 2, (8, 0), |_r, _m, _p| -> bool {
             bit_msk_n(&mut _r.af, 0x80, gr((&_r.hl, D)))
         }));
-        ops[0x17e] = Some(Op::new("BIT 7, (HL)", 2, (16, 0), |_r, _m, _p| -> bool {
+        ops[0x17e] = Some(Op::new("BIT 7, (HL)", 2, (12, 0), |_r, _m, _p| -> bool {
             bit_msk_n(&mut _r.af, 0x80, _m.get(grr(&_r.hl)))
         }));
         ops[0x17f] = Some(Op::new("BIT 7, A", 2, (8, 0), |_r, _m, _p| -> bool {

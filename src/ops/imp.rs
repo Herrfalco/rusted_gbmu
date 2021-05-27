@@ -8,13 +8,8 @@ pub fn ld_r_n(r: MR, n: u8) -> bool {
     true
 }
 
-pub fn ld_arr_n(m: MMy, rr: RR, n: u8) -> bool {
-    m.set(grr(rr), n);
-    true
-}
-
-pub fn ld_ann_r(m: MMy, nn: u16, r: R) -> bool {
-    m.set(nn, gr(r));
+pub fn ld_ann_n(m: MMy, nn: u16, n: u8) -> bool {
+    m.set(nn, n);
     true
 }
 
@@ -28,24 +23,19 @@ pub fn ldh_an_r(m: MMy, n: u8, r: R) -> bool {
     true
 }
 
-pub fn ldh_ar_r(m: MMy, r1: R, r2: R) -> bool {
-    m.set(gr(r1) as u16 | 0xff00, gr(r2));
-    true
-}
-
 pub fn ldh_r_an(m: My, r: MR, n: u8) -> bool {
     sr(r, m.get(n as u16 | 0xff00));
     true
 }
 
 pub fn ld_arri_r(m: MMy, rr: MRR, r: R) -> bool {
-    ld_arr_n(m, rr, gr(r));
+    ld_ann_n(m, grr(rr), gr(r));
     srr(rr, grr(rr).wrapping_add(1));
     true
 }
 
 pub fn ld_arrd_r(m: MMy, rr: MRR, r: R) -> bool {
-    ld_arr_n(m, rr, gr(r));
+    ld_ann_n(m, grr(rr), gr(r));
     srr(rr, grr(rr).wrapping_sub(1));
     true
 }
