@@ -1,4 +1,4 @@
-mod imp;
+pub mod imp;
 pub mod ops;
 
 #[cfg(test)]

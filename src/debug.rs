@@ -138,7 +138,9 @@ impl<'a> Debugger {
                 Ok(s) => s,
                 _ => continue,
             };
-            self.edit.add_history_entry(&entry);
+            if entry.len() != 0 {
+                self.edit.add_history_entry(&entry);
+            }
             if let Some((cmd, par)) = self.parse_cmd(&entry[..]) {
                 match cmd {
                     Cmd::NI => break,
@@ -227,21 +229,22 @@ impl<'a> Debugger {
 
     pub fn run(&mut self, m: &mut Mem, r: &mut Regs, op: &Op, p: u16) {
         if self.debug {
-            let fm_par: String;
-
-            fm_par = match op.len() {
-                1 => String::from(""),
-                2 => format!("0x{:02x}", p),
-                3 => format!("0x{:04x}", p),
-                _ => fatal_err("Wrong operation length", 4),
-            };
-            println!(
-                "0x{:04x}:  {}",
-                grr(&r.pc),
-                format!("{}", op).replace("#", &fm_par)
-            );
             if self.sbys || self.brks.contains(&grr(&r.pc)) {
                 self.sbys = true;
+
+                let fm_par: String;
+
+                fm_par = match op.len() {
+                    1 => String::from(""),
+                    2 => format!("0x{:02x}", p),
+                    3 => format!("0x{:04x}", p),
+                    _ => fatal_err("Wrong operation length", 4),
+                };
+                println!(
+                    "0x{:04x}:  {}",
+                    grr(&r.pc),
+                    format!("{}", op).replace("#", &fm_par)
+                );
                 self.get_cmd(m, r);
             }
         }

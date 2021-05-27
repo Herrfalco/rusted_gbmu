@@ -1,11 +1,15 @@
 mod debug;
+mod disp;
 mod mem;
 mod ops;
 mod reg;
 mod utils;
 
 use debug::*;
+use disp::*;
 use mem::*;
+use ops::imp::dec_rr;
+use ops::imp::rst;
 use ops::ops::*;
 use reg::{api::*, *};
 use std::env;
@@ -22,9 +26,28 @@ fn read_param(mem: My, pc: MRR, len: usize) -> u16 {
     let mut result: u16 = 0;
 
     for i in 1..len as u16 {
-        result |= (mem.get(grr(pc) + i) as u16) << (4 * (i - 1));
+        result |= (mem.get(grr(pc) + i) as u16) << (8 * (i - 1));
     }
     result
+}
+
+fn handl_int(m: &mut Mem, r: &mut Regs) -> usize {
+    srr(&mut r.ime, 0);
+    for i in 0..5 {
+        if (0x1 << i) & (m.get(IE) & 0x1f) & (m.get(IF) & 0x1f) != 0 {
+            m.set(IF, m.get(IF) & !(0x1 << i));
+            match i {
+                0 => rst(m, &mut r.sp, &mut r.pc, 0x40),
+                1 => rst(m, &mut r.sp, &mut r.pc, 0x48),
+                2 => rst(m, &mut r.sp, &mut r.pc, 0x50),
+                3 => rst(m, &mut r.sp, &mut r.pc, 0x58),
+                4 => rst(m, &mut r.sp, &mut r.pc, 0x60),
+                _ => true,
+            };
+            break;
+        }
+    }
+    4
 }
 
 fn main() {
@@ -45,19 +68,39 @@ fn main() {
     let ops = Ops::new();
     let mut dbg = Debugger::new(DEBUG);
 
+    let mut disp = Display::new();
+
     let mut opcode: u8;
     let mut op: &Op;
     let mut param: u16;
     let mut tmp: u16;
+    let mut cycles: usize = 0;
     loop {
-        opcode = read_opcode(&mem, &mut regs.pc);
-        op = &ops
-            .get(opcode as usize)
-            .unwrap_or_else(|| fatal_err(&format!("Opcode 0x{:02x} not implemented", opcode), 3));
-        param = read_param(&mem, &mut regs.pc, op.len());
-        dbg.run(&mut mem, &mut regs, op, param);
-        tmp = grr(&regs.pc).wrapping_add(op.len() as u16);
-        srr(&mut regs.pc, tmp);
-        op.exec(&mut regs, &mut mem, param);
+        if cycles == 0 {
+            if grr(&regs.ime) == 1 && ((mem.get(IE) & 0x1f) & (mem.get(IF) & 0x1f)) != 0 {
+                cycles = handl_int(&mut mem, &mut regs);
+            } else {
+                opcode = read_opcode(&mem, &mut regs.pc);
+                op = &ops.get(opcode as usize).unwrap_or_else(|| {
+                    fatal_err(&format!("Opcode 0x{:02x} not implemented", opcode), 3)
+                });
+                param = read_param(&mem, &mut regs.pc, op.len());
+                dbg.run(&mut mem, &mut regs, op, param);
+                tmp = grr(&regs.pc).wrapping_add(op.len() as u16);
+                srr(&mut regs.pc, tmp);
+                cycles = if op.exec(&mut regs, &mut mem, param) {
+                    op.cycles.0
+                } else {
+                    op.cycles.1
+                } / 4
+                    - 1;
+                if grr(&regs.ime) > 1 {
+                    dec_rr(&mut regs.ime);
+                }
+            }
+        } else {
+            cycles -= 1;
+        }
+        disp.update(&mut mem);
     }
 }

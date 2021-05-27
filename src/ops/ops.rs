@@ -6,7 +6,7 @@ use std::fmt;
 pub struct Op {
     label: &'static str,
     len: usize,
-    cycles: (usize, usize),
+    pub cycles: (usize, usize),
     func: fn(&mut Regs, &mut Mem, u16) -> bool,
 }
 
@@ -694,7 +694,7 @@ impl Ops {
         ops[0xd2] = Some(Op::new("JP NC, #", 3, (16, 12), |_r, _m, _p| -> bool {
             jp_cc_nn(&mut _r.pc, !gf((&_r.af, CY)), _p)
         }));
-        ops[0xc3] = Some(Op::new("JP #", 3, (12, 0), |_r, _m, _p| -> bool {
+        ops[0xc3] = Some(Op::new("JP #", 3, (16, 0), |_r, _m, _p| -> bool {
             jp_cc_nn(&mut _r.pc, true, _p)
         }));
         ops[0xca] = Some(Op::new("JP Z, #", 3, (16, 12), |_r, _m, _p| -> bool {
@@ -801,16 +801,16 @@ impl Ops {
         }));
 
         ops[0x0b] = Some(Op::new("DEC BC", 1, (8, 0), |_r, _m, _p| -> bool {
-            inc_rr(&mut _r.bc)
+            dec_rr(&mut _r.bc)
         }));
         ops[0x1b] = Some(Op::new("DEC DE", 1, (8, 0), |_r, _m, _p| -> bool {
-            inc_rr(&mut _r.de)
+            dec_rr(&mut _r.de)
         }));
         ops[0x2b] = Some(Op::new("DEC HL", 1, (8, 0), |_r, _m, _p| -> bool {
-            inc_rr(&mut _r.hl)
+            dec_rr(&mut _r.hl)
         }));
         ops[0x3b] = Some(Op::new("DEC SP", 1, (8, 0), |_r, _m, _p| -> bool {
-            inc_rr(&mut _r.sp)
+            dec_rr(&mut _r.sp)
         }));
 
         ////////////////////// ROTATE/SHIFT ///////////////////////
