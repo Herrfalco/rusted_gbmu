@@ -18,15 +18,15 @@ use utils::*;
 
 const DEBUG: bool = true;
 
-fn read_opcode(mem: My, pc: MRR) -> u8 {
-    mem.get(grr(pc))
+fn read_opcode(mem: My, pc: RR) -> (u8, u8) {
+    (mem.get(grr(pc)), mem.get(grr(pc).wrapping_add(1)))
 }
 
 fn read_param(mem: My, pc: MRR, len: usize) -> u16 {
     let mut result: u16 = 0;
 
     for i in 1..len as u16 {
-        result |= (mem.get(grr(pc) + i) as u16) << (8 * (i - 1));
+        result |= (mem.get(grr(pc).wrapping_add(i)) as u16) << (8 * (i - 1));
     }
     result
 }
@@ -71,7 +71,7 @@ fn main() {
         let ops = Ops::new();
         let mut disp = Display::new();
 
-        let mut opcode: u8;
+        let mut opcode: (u8, u8);
         let mut op: &Op;
         let mut param: u16;
         let mut tmp: u16;
@@ -82,8 +82,8 @@ fn main() {
                     cycles = handl_int(&mut mem, &mut regs);
                 } else {
                     opcode = read_opcode(&mem, &mut regs.pc);
-                    op = &ops.get(opcode as usize).unwrap_or_else(|| {
-                        fatal_err(&format!("Opcode 0x{:02x} not implemented", opcode), 3)
+                    op = &ops.get(opcode).unwrap_or_else(|| {
+                        fatal_err(&format!("Opcode 0x{:02x} not implemented", opcode.0), 3)
                     });
                     param = read_param(&mem, &mut regs.pc, op.len());
                     if !dbg.run(&mut mem, &mut regs, op, param) {

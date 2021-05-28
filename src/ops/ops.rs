@@ -43,7 +43,12 @@ impl fmt::Display for Op {
 pub struct Ops(Vec<Option<Op>>);
 
 impl Ops {
-    pub fn get(&self, idx: usize) -> Option<&Op> {
+    pub fn get(&self, opcode: (u8, u8)) -> Option<&Op> {
+        let idx = if opcode.0 == 0xcb {
+            0x100 | opcode.1 as usize
+        } else {
+            opcode.0 as usize
+        };
         match &self.0[idx] {
             Some(op) => Some(&op),
             None => None,
@@ -1705,7 +1710,7 @@ mod tests {
     fn creation() {
         let ops = Ops::new();
 
-        if let Some(op) = ops.get(2) {
+        if let Some(op) = ops.get((2, 0)) {
             assert_eq!(op.label, "LD (BC), A");
         } else {
             panic!();

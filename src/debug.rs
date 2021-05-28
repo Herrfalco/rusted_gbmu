@@ -3,13 +3,20 @@ use crate::ops::ops::*;
 use crate::reg::{api::*, *};
 use crate::utils::*;
 use lazy_regex::regex;
+use minifb::{Window, WindowOptions};
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
+use priomutex::Mutex;
 use regex::Regex;
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
 use std::process::exit;
 use std::str::FromStr;
+use std::sync::Arc;
+use std::thread;
+
+const VRAM_H: usize = 192;
+const VRAM_W: usize = 128;
 
 #[derive(PartialEq, FromPrimitive)]
 enum Cmd {
@@ -29,6 +36,7 @@ enum Cmd {
     RShw,
     RAShw,
     Exit,
+    VRam,
     Unknown,
 }
 
@@ -38,6 +46,8 @@ pub struct Debugger {
     debug: bool,
     brks: Vec<u16>,
     sbys: bool,
+    vram_buff: Arc<Mutex<Vec<u32>>>,
+    vram_win: Arc<Mutex<bool>>,
 }
 
 impl<'a> Debugger {
@@ -60,11 +70,14 @@ impl<'a> Debugger {
                 regex!(r#"^r$"#i),
                 regex!(r#"^ra$"#i),
                 regex!(r#"^exit$"#i),
+                regex!(r#"^vram$"#i),
             ],
             edit: Editor::new(),
             debug,
             brks: Vec::new(),
             sbys: true,
+            vram_buff: Arc::new(Mutex::new(vec![COLORS[0]; VRAM_W * VRAM_H])),
+            vram_win: Arc::new(Mutex::new(false)),
         }
     }
 
@@ -123,11 +136,66 @@ impl<'a> Debugger {
         println!("-------------------------------------------------------");
         for i in 0..len as u16 {
             if i % 16 == 0 {
-                print!("{}0x{:04x}: ", if i != 0 { "\n" } else { "" }, i + addr);
+                print!(
+                    "{}0x{:04x}: ",
+                    if i != 0 { "\n" } else { "" },
+                    i.wrapping_add(addr)
+                );
             }
-            print!("{:02x} ", m.get(i + addr));
+            print!("{:02x} ", m.get(i.wrapping_add(addr)));
         }
         println!("\n-------------------------------------------------------");
+    }
+
+    fn update_vram(&mut self, m: My) {
+        let mut b1: u8;
+        let mut b2: u8;
+
+        let mut buff = self.vram_buff.lock(0).unwrap();
+        for y in 0..24 {
+            for x in 0..16 {
+                for z in 0..8 {
+                    b1 = m.get((0x8000 + y * 256 + x * 16 + z * 2) as u16);
+                    b2 = m.get((0x8000 + y * 256 + x * 16 + z * 2 + 1) as u16);
+
+                    let mut tmp;
+                    for i in 0..8 {
+                        tmp = ((i as i8 - 7) * -1) as usize;
+                        (*buff)[y * 1024 + z * 128 + x * 8 + i] =
+                            COLORS[(((b1 >> tmp) & 0x1) | (((b2 >> tmp) & 0x1) << 1)) as usize];
+                    }
+                }
+            }
+        }
+    }
+
+    fn disp_vram(&mut self) {
+        let mut win_op = self.vram_win.lock(0).unwrap();
+        if !*win_op {
+            let (open, buff) = (self.vram_win.clone(), self.vram_buff.clone());
+            *win_op = true;
+            thread::spawn(move || {
+                let mut win =
+                    match Window::new("VRAM", VRAM_W * 4, VRAM_H * 4, WindowOptions::default()) {
+                        Ok(win) => win,
+                        Err(_) => {
+                            println!("Error: Can't open VRAM window");
+                            println!("2 in");
+                            *open.lock(0).unwrap() = false;
+                            println!("2 out");
+                            exit(1);
+                        }
+                    };
+                win.limit_update_rate(Some(std::time::Duration::from_millis(100)));
+                while win.is_open() {
+                    win.update_with_buffer(&(*buff.lock(1).unwrap())[..], VRAM_W, VRAM_H)
+                        .unwrap();
+                }
+                *open.lock(0).unwrap() = false;
+            });
+        } else {
+            println!("Error: VRAM already displayed");
+        }
     }
 
     fn get_cmd(&mut self, m: &mut Mem, r: &mut Regs) -> bool {
@@ -135,6 +203,9 @@ impl<'a> Debugger {
         let mut entry: String;
 
         loop {
+            if *self.vram_win.lock(0).unwrap() {
+                self.update_vram(m);
+            }
             line = self.edit.readline("> ");
             entry = match line {
                 Ok(s) => s,
@@ -221,6 +292,9 @@ impl<'a> Debugger {
                     Cmd::RAShw => println!("Error: Not implemented yet..."),
                     Cmd::Exit => {
                         exit(0);
+                    }
+                    Cmd::VRam => {
+                        self.disp_vram();
                     }
                     _ => println!("Error: Unknown command"),
                 }
@@ -320,6 +394,7 @@ mod tests {
             "exit",
             " exit",
             "q",
+            "vram",
         ];
         let res = vec![
             (true, Cmd::NI, vec![]),
@@ -378,6 +453,7 @@ mod tests {
             (true, Cmd::Exit, vec![]),
             (false, Cmd::Unknown, vec![]),
             (false, Cmd::Unknown, vec![]),
+            (true, Cmd::VRam, vec![]),
         ];
         for (idx, entry) in ents.iter().enumerate() {
             if let Some((cmd, par)) = dbg.parse_cmd(&entry[..]) {
