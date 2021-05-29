@@ -719,7 +719,8 @@ pub fn set_msk_arr(m: MMy, msk: u8, rr: RR) -> bool {
 
 /////ADD TESTS !
 /////need to be implemented (low consumption)
-pub fn stop() -> bool {
+pub fn stop(m: MMy) -> bool {
+    m.set(DIV, 0);
     true
 }
 

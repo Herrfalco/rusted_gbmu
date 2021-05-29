@@ -21,7 +21,12 @@ impl Mem {
     }
 
     pub fn set(&mut self, addr: u16, val: u8) {
-        self.data[addr as usize] = val;
+        let mut tmp = val;
+
+        if addr == DIV {
+            tmp = 0
+        }
+        self.data[addr as usize] = tmp;
     }
 
     pub fn load_rom(&mut self, len: usize, path: &Path) -> Result<(), &str> {
@@ -37,6 +42,8 @@ impl Mem {
     }
 
     pub fn init_spe_reg(&mut self) {
+        self.set(P1, 0xf);
+        self.set(DIV, 0x00);
         self.set(TIMA, 0x00);
         self.set(TMA, 0x00);
         self.set(TAC, 0x00);

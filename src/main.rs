@@ -3,6 +3,7 @@ mod disp;
 mod mem;
 mod ops;
 mod reg;
+mod timer;
 mod utils;
 
 use debug::*;
@@ -14,6 +15,7 @@ use ops::ops::*;
 use reg::{api::*, *};
 use std::env;
 use std::path::Path;
+use timer::*;
 use utils::*;
 
 const DEBUG: bool = true;
@@ -52,6 +54,7 @@ fn handl_int(m: &mut Mem, r: &mut Regs) -> usize {
 
 fn main() {
     let mut dbg = Debugger::new(DEBUG);
+    let mut disp = Display::new();
 
     'restart: loop {
         let args: Vec<String> = env::args().skip(1).collect();
@@ -69,7 +72,7 @@ fn main() {
         regs.init();
 
         let ops = Ops::new();
-        let mut disp = Display::new();
+        let mut timer = Timer::new(&mut mem);
 
         let mut opcode: (u8, u8);
         let mut op: &Op;
@@ -104,6 +107,7 @@ fn main() {
             } else {
                 cycles -= 1;
             }
+            timer.update(&mut mem);
             disp.update(&mut mem);
         }
     }

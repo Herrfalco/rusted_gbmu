@@ -1,5 +1,11 @@
 use crate::mem::*;
 use crate::reg::api::*;
+use crate::utils::*;
+use minifb::{Window, WindowOptions};
+use std::process::exit;
+
+const LCD_W: usize = 160;
+const LCD_H: usize = 144;
 
 enum State {
     Oam,
@@ -8,17 +14,37 @@ enum State {
     VBlank,
 }
 
+use std::time::{Duration, Instant};
+
 pub struct Display {
     cycles: usize,
     state: State,
+    buff: Vec<u32>,
+    win: Window,
+    time: Instant,
+    time_v: Vec<u128>,
 }
 
 impl Display {
     pub fn new() -> Display {
-        Display {
+        let mut result = Display {
             cycles: 20,
             state: State::Oam,
-        }
+            buff: vec![COLORS[0]; LCD_W * LCD_H],
+            win: Window::new(
+                "Falco's GBMU",
+                LCD_W * 4,
+                LCD_H * 4,
+                WindowOptions::default(),
+            )
+            .unwrap_or_else(|_| fatal_err("Can't open game window", 10)),
+            time: Instant::now(),
+            time_v: Vec::new(),
+        };
+        result
+            .win
+            .limit_update_rate(Some(std::time::Duration::from_millis(17)));
+        result
     }
 
     fn update_ly(m: MMy) {
@@ -59,6 +85,39 @@ impl Display {
         st
     }
 
+    pub fn get_bg_pix(m: My, x: usize) -> u32 {
+        let (bg_x, bg_y) = (
+            (x + m.get(SCX) as usize) % 256,
+            ((m.get(LY) + m.get(SCY)) as usize) % 256,
+        );
+        let (tile_x, tile_y) = (bg_x % 8, bg_y % 8);
+        let tile_n = m.get(
+            (bg_y / 8 * 32
+                + bg_x / 8
+                + if m.get(LCDC) & 0x8 == 0 {
+                    0x9800
+                } else {
+                    0x9c00
+                }) as u16,
+        );
+        let tile_b = tile_n as usize * 16
+            + 0x8000
+            /*
+            + if m.get(LCDC) & 0x10 == 0 && tile_n < 128 {
+                0x9000
+            } else {
+                0x8000
+            }
+            */
+            + tile_y * 2;
+        let i = ((tile_x as isize - 7) * -1) as usize;
+        COLORS[(((m.get(tile_b as u16) >> i) & 0x1)
+            | (((m.get(tile_b as u16 + 1) >> i) & 0x1) << 1)) as usize
+            + 1]
+    }
+
+    //div inc every 64 m-cycle
+
     pub fn update(&mut self, m: MMy) {
         self.cycles -= 1;
         if self.cycles == 0 {
@@ -68,6 +127,11 @@ impl Display {
                     self.cycles = 43;
                 }
                 State::Draw => {
+                    let y = m.get(LY) as usize * LCD_W;
+
+                    for x in 0..160 {
+                        self.buff[y + x] = Display::get_bg_pix(m, x);
+                    }
                     self.state = Display::update_stat(m, State::HBlank);
                     self.cycles = 51;
                 }
@@ -84,6 +148,22 @@ impl Display {
                 }
                 State::VBlank => {
                     if m.get(LY) == 153 {
+                        let elap = self.time.elapsed();
+                        self.time_v.push(elap.as_millis());
+                        if self.time_v.len() == 60 {
+                            println!(
+                                "{}",
+                                1000. / (self.time_v.iter().sum::<u128>() as f32 / 60.)
+                            );
+                            self.time_v.clear();
+                        }
+                        self.time = Instant::now();
+                        self.win
+                            .update_with_buffer(&self.buff, LCD_W, LCD_H)
+                            .unwrap();
+                        if !self.win.is_open() {
+                            exit(0);
+                        }
                         Display::update_ly(m);
                         self.state = Display::update_stat(m, State::Oam);
                         self.cycles = 20;

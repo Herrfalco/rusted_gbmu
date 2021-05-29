@@ -15,8 +15,8 @@ use std::str::FromStr;
 use std::sync::Arc;
 use std::thread;
 
-const VRAM_H: usize = 192;
 const VRAM_W: usize = 128;
+const VRAM_H: usize = 192;
 
 #[derive(PartialEq, FromPrimitive)]
 enum Cmd {
@@ -162,7 +162,7 @@ impl<'a> Debugger {
                     for i in 0..8 {
                         tmp = ((i as i8 - 7) * -1) as usize;
                         (*buff)[y * 1024 + z * 128 + x * 8 + i] =
-                            COLORS[(((b1 >> tmp) & 0x1) | (((b2 >> tmp) & 0x1) << 1)) as usize];
+                            COLORS[(((b1 >> tmp) & 0x1) | (((b2 >> tmp) & 0x1) << 1)) as usize + 1];
                     }
                 }
             }
@@ -180,13 +180,11 @@ impl<'a> Debugger {
                         Ok(win) => win,
                         Err(_) => {
                             println!("Error: Can't open VRAM window");
-                            println!("2 in");
                             *open.lock(0).unwrap() = false;
-                            println!("2 out");
                             exit(1);
                         }
                     };
-                win.limit_update_rate(Some(std::time::Duration::from_millis(100)));
+                win.limit_update_rate(Some(std::time::Duration::from_micros(16666)));
                 while win.is_open() {
                     win.update_with_buffer(&(*buff.lock(1).unwrap())[..], VRAM_W, VRAM_H)
                         .unwrap();

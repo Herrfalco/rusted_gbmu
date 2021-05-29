@@ -351,13 +351,13 @@ impl Ops {
         ops[0xc1] = Some(Op::new("POP BC", 1, (12, 0), |_r, _m, _p| -> bool {
             pop_rr_arr(_m, &mut _r.bc, &mut _r.sp)
         }));
-        ops[0xd1] = Some(Op::new("POP BC", 1, (12, 0), |_r, _m, _p| -> bool {
+        ops[0xd1] = Some(Op::new("POP DE", 1, (12, 0), |_r, _m, _p| -> bool {
             pop_rr_arr(_m, &mut _r.de, &mut _r.sp)
         }));
-        ops[0xe1] = Some(Op::new("POP BC", 1, (12, 0), |_r, _m, _p| -> bool {
+        ops[0xe1] = Some(Op::new("POP HL", 1, (12, 0), |_r, _m, _p| -> bool {
             pop_rr_arr(_m, &mut _r.hl, &mut _r.sp)
         }));
-        ops[0xf1] = Some(Op::new("POP BC", 1, (12, 0), |_r, _m, _p| -> bool {
+        ops[0xf1] = Some(Op::new("POP AF", 1, (12, 0), |_r, _m, _p| -> bool {
             pop_rr_arr(_m, &mut _r.af, &mut _r.sp)
         }));
 
@@ -836,7 +836,9 @@ impl Ops {
         ////////////////////// MISC/CONTROL ///////////////////////
 
         ops[0x00] = Some(Op::new("NOP", 1, (4, 0), |_r, _m, _p| -> bool { true }));
-        ops[0x10] = Some(Op::new("STOP", 2, (4, 0), |_r, _m, _p| -> bool { stop() }));
+        ops[0x10] = Some(Op::new("STOP", 2, (4, 0), |_r, _m, _p| -> bool {
+            stop(_m)
+        }));
         ops[0x76] = Some(Op::new("HALT", 1, (4, 0), |_r, _m, _p| -> bool { halt() }));
         ops[0xf3] = Some(Op::new("DI", 1, (4, 0), |_r, _m, _p| -> bool {
             di(&mut _r.ime)
