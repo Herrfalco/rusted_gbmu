@@ -19,15 +19,45 @@ enum State {
     VBlank,
 }
 
-//use std::time::Instant;
+/*
+use std::time::Instant;
+*/
+
+struct Sprite {
+    id: usize,
+    pos: (isize, isize),
+    tile: u16,
+    under: bool,
+    flip: (bool, bool),
+    pal: u16,
+}
+
+impl Sprite {
+    fn new(m: My, id: usize) -> Sprite {
+        let addr: u16 = 0xfe00 + id as u16 * 4;
+        let attr = m.get(addr + 3) & 0xf0;
+
+        Sprite {
+            id,
+            pos: (m.get(addr + 1) as isize - 8, m.get(addr) as isize - 16),
+            tile: 0x8000 + m.get(addr + 2) as u16 * 16,
+            under: attr & 0x80 != 0,
+            flip: (attr & 0x20 != 0, attr & 0x40 != 0),
+            pal: if attr & 0x10 != 0 { OBP1 } else { OBP0 },
+        }
+    }
+}
 
 pub struct Display {
     cycles: usize,
     state: State,
     buff: Vec<u32>,
     win: Window,
-    //    time: Instant,
-    //   time_v: Vec<u128>,
+    sprites: Vec<Sprite>,
+    /*
+    time: Instant,
+    time_v: Vec<u128>,
+    */
 }
 
 impl Display {
@@ -43,13 +73,48 @@ impl Display {
                 WindowOptions::default(),
             )
             .unwrap_or_else(|_| fatal_err("Can't open game window", 10)),
-            //           time: Instant::now(),
-            //           time_v: Vec::new(),
+            sprites: Vec::new(),
+            /*
+            time: Instant::now(),
+            time_v: Vec::new(),
+            */
         };
         result
             .win
             .limit_update_rate(Some(std::time::Duration::from_millis(17)));
         result
+            .win
+            .update_with_buffer(&result.buff, LCD_W, LCD_H)
+            .unwrap();
+        result
+    }
+
+    pub fn reset(&mut self) {
+        self.cycles = 80;
+        self.state = State::Oam;
+        self.buff = vec![COLORS[0]; LCD_W * LCD_H];
+        self.sprites = Vec::new();
+        self.win
+            .update_with_buffer(&self.buff, LCD_W, LCD_H)
+            .unwrap();
+    }
+
+    fn update_spr(&mut self, m: My) {
+        let mut spr: Sprite;
+        let spr_h = if m.get(LCDC) & 0x4 != 0 { 16 } else { 8 };
+
+        self.sprites.clear();
+        for i in 0..40 {
+            spr = Sprite::new(m, i);
+            if m.get(LY) as isize >= spr.pos.1 && (m.get(LY) as isize) < spr.pos.1 + spr_h {
+                self.sprites.push(spr);
+            }
+            if self.sprites.len() == 10 {
+                break;
+            }
+        }
+        self.sprites
+            .sort_by(|a, b| a.pos.0.partial_cmp(&b.pos.0).unwrap());
     }
 
     fn update_ly(m: MMy) {
@@ -90,7 +155,7 @@ impl Display {
         st
     }
 
-    pub fn get_bg_pix(m: My, x: usize) -> u32 {
+    pub fn get_bg_pix(m: My, x: usize) -> u8 {
         let (bg_x, bg_y) = (
             (x + m.get(SCX) as usize) % 256,
             ((m.get(LY) + m.get(SCY)) as usize) % 256,
@@ -113,9 +178,9 @@ impl Display {
             }
             + tile_y * 2;
         let i = ((tile_x as isize - 7) * -1) as usize;
-        COLORS[(((m.get(tile_b as u16) >> i) & 0x1)
-            | (((m.get(tile_b as u16 + 1) >> i) & 0x1) << 1)) as usize
-            + 1]
+        let bit1 = (m.get(tile_b as u16) >> i) & 0x1;
+        let bit2 = ((m.get(tile_b as u16 + 1) >> i) & 0x1) << 1;
+        bit1 | bit2
     }
 
     pub fn update(&mut self, m: MMy, cy: usize) {
@@ -124,14 +189,24 @@ impl Display {
 
             match self.state {
                 State::Oam => {
+                    self.update_spr(m);
                     self.state = Display::update_stat(m, State::Draw);
                     self.cycles = DRAW_T - rem;
                 }
                 State::Draw => {
                     let y = m.get(LY) as usize * LCD_W;
 
+                    /*
+                    if self.sprites.len() != 0 {
+                        for s in &self.sprites {
+                            if s.pos.0 > 0 {
+                                println!("{}", s.id);
+                            }
+                        }
+                    }
+                    */
                     for x in 0..160 {
-                        self.buff[y + x] = Display::get_bg_pix(m, x);
+                        self.buff[y + x] = COLORS[Display::get_bg_pix(m, x) as usize + 1];
                     }
                     self.state = Display::update_stat(m, State::HBlank);
                     self.cycles = H_BLK_T - rem;

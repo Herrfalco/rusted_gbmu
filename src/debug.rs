@@ -6,17 +6,15 @@ use lazy_regex::regex;
 use minifb::{Window, WindowOptions};
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
-use priomutex::Mutex;
 use regex::Regex;
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
 use std::process::exit;
 use std::str::FromStr;
-use std::sync::Arc;
-use std::thread;
 
 const VRAM_W: usize = 128;
 const VRAM_H: usize = 192;
+const VRAM_UP_CY: usize = 32768;
 
 #[derive(PartialEq, FromPrimitive)]
 enum Cmd {
@@ -41,19 +39,78 @@ enum Cmd {
     Unknown,
 }
 
+pub struct VramDisp {
+    buff: Vec<u32>,
+    win: Window,
+    cycl: usize,
+}
+
+impl VramDisp {
+    pub fn new(m: My) -> Option<VramDisp> {
+        let mut result = VramDisp {
+            buff: vec![COLORS[0]; VRAM_W * VRAM_H],
+            win: match Window::new("VRAM", VRAM_W * 4, VRAM_H * 4, WindowOptions::default()) {
+                Ok(win) => win,
+                Err(_) => {
+                    println!("Error: Can't open VRAM window");
+                    return None;
+                }
+            },
+            cycl: 0,
+        };
+        result
+            .win
+            .limit_update_rate(Some(std::time::Duration::from_micros(16666)));
+        result.update(m, true);
+
+        Some(result)
+    }
+
+    pub fn update(&mut self, m: My, now: bool) -> bool {
+        if self.cycl == 0 || now {
+            let mut b1: u8;
+            let mut b2: u8;
+
+            for y in 0..24 {
+                for x in 0..16 {
+                    for z in 0..8 {
+                        b1 = m.get((0x8000 + y * 256 + x * 16 + z * 2) as u16);
+                        b2 = m.get((0x8000 + y * 256 + x * 16 + z * 2 + 1) as u16);
+
+                        let mut tmp;
+                        for i in 0..8 {
+                            tmp = ((i as i8 - 7) * -1) as usize;
+                            self.buff[y * 1024 + z * 128 + x * 8 + i] = COLORS
+                                [(((b1 >> tmp) & 0x1) | (((b2 >> tmp) & 0x1) << 1)) as usize + 1];
+                        }
+                    }
+                }
+            }
+            self.cycl = VRAM_UP_CY;
+            self.win
+                .update_with_buffer(&self.buff[..], VRAM_W, VRAM_H)
+                .unwrap();
+            if !self.win.is_open() {
+                return false;
+            }
+        }
+        self.cycl -= 1;
+        true
+    }
+}
+
 pub struct Debugger {
     rgxs: Vec<&'static Regex>,
     edit: Editor<()>,
     debug: bool,
     brks: Vec<u16>,
     sbys: bool,
-    vram_buff: Arc<Mutex<Vec<u32>>>,
-    vram_win: Arc<Mutex<bool>>,
+    pub vram: Option<VramDisp>,
 }
 
 impl<'a> Debugger {
     pub fn new(debug: bool) -> Debugger {
-        Debugger {
+        let result = Debugger {
             rgxs: vec![
                 regex!(r#"^$"#i),
                 regex!(r#"^!$"#i),
@@ -78,9 +135,9 @@ impl<'a> Debugger {
             debug,
             brks: Vec::new(),
             sbys: true,
-            vram_buff: Arc::new(Mutex::new(vec![COLORS[0]; VRAM_W * VRAM_H])),
-            vram_win: Arc::new(Mutex::new(false)),
-        }
+            vram: None,
+        };
+        result
     }
 
     fn parse_cmd(&self, s: &'a str) -> Option<(Cmd, Vec<String>)> {
@@ -149,63 +206,14 @@ impl<'a> Debugger {
         println!("\n-------------------------------------------------------");
     }
 
-    fn update_vram(&mut self, m: My) {
-        let mut b1: u8;
-        let mut b2: u8;
-
-        let mut buff = self.vram_buff.lock(0).unwrap();
-        for y in 0..24 {
-            for x in 0..16 {
-                for z in 0..8 {
-                    b1 = m.get((0x8000 + y * 256 + x * 16 + z * 2) as u16);
-                    b2 = m.get((0x8000 + y * 256 + x * 16 + z * 2 + 1) as u16);
-
-                    let mut tmp;
-                    for i in 0..8 {
-                        tmp = ((i as i8 - 7) * -1) as usize;
-                        (*buff)[y * 1024 + z * 128 + x * 8 + i] =
-                            COLORS[(((b1 >> tmp) & 0x1) | (((b2 >> tmp) & 0x1) << 1)) as usize + 1];
-                    }
-                }
-            }
-        }
-    }
-
-    fn disp_vram(&mut self) {
-        let mut win_op = self.vram_win.lock(0).unwrap();
-        if !*win_op {
-            let (open, buff) = (self.vram_win.clone(), self.vram_buff.clone());
-            *win_op = true;
-            thread::spawn(move || {
-                let mut win =
-                    match Window::new("VRAM", VRAM_W * 4, VRAM_H * 4, WindowOptions::default()) {
-                        Ok(win) => win,
-                        Err(_) => {
-                            println!("Error: Can't open VRAM window");
-                            *open.lock(0).unwrap() = false;
-                            exit(1);
-                        }
-                    };
-                win.limit_update_rate(Some(std::time::Duration::from_micros(16666)));
-                while win.is_open() {
-                    win.update_with_buffer(&(*buff.lock(1).unwrap())[..], VRAM_W, VRAM_H)
-                        .unwrap();
-                }
-                *open.lock(0).unwrap() = false;
-            });
-        } else {
-            println!("Error: VRAM already displayed");
-        }
-    }
-
     fn get_cmd(&mut self, m: &mut Mem, r: &mut Regs) -> bool {
         let mut line: Result<String, ReadlineError>;
         let mut entry: String;
 
+        if let Some(vram) = &mut self.vram {
+            vram.update(m, true);
+        }
         loop {
-            if *self.vram_win.lock(0).unwrap() {
-                self.update_vram(m);
-            }
             line = self.edit.readline("> ");
             entry = match line {
                 Ok(s) => s,
@@ -299,7 +307,11 @@ impl<'a> Debugger {
                         exit(0);
                     }
                     Cmd::VRam => {
-                        self.disp_vram();
+                        if let None = self.vram {
+                            self.vram = VramDisp::new(m);
+                        } else {
+                            println!("Error: VRAM already displayed");
+                        }
                     }
                     _ => println!("Error: Unknown command"),
                 }
@@ -312,6 +324,11 @@ impl<'a> Debugger {
 
     pub fn run(&mut self, m: &mut Mem, r: &mut Regs, op: &Op, p: u16) -> bool {
         if self.debug {
+            if let Some(vram) = &mut self.vram {
+                if !vram.update(m, false) {
+                    self.vram = None;
+                }
+            }
             if self.sbys || self.brks.contains(&grr(&r.pc)) {
                 self.sbys = true;
 

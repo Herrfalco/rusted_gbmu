@@ -23,7 +23,13 @@ impl Mem {
         self.data[addr as usize]
     }
 
-    fn dma(&self, val: u8) {}
+    fn dma(&mut self, val: u8) {
+        let tmp = (val as u16) << 2;
+
+        for i in 0x0..0x9f {
+            self.set(0xfe00 | i, self.get(tmp | i));
+        }
+    }
 
     pub fn set(&mut self, addr: u16, val: u8) {
         let mut tmp = val;

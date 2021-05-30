@@ -52,15 +52,16 @@ fn handl_int(m: &mut Mem, r: &mut Regs) {
 }
 
 fn main() {
+    let mut reset = false;
     let mut dbg = Debugger::new(DEBUG);
     let mut disp = Display::new();
 
-    'restart: loop {
-        let args: Vec<String> = env::args().skip(1).collect();
-        if args.len() != 1 {
-            fatal_err("Need a rom file as argument", 1);
-        }
+    let args: Vec<String> = env::args().skip(1).collect();
+    if args.len() != 1 {
+        fatal_err("Need a rom file as argument", 1);
+    }
 
+    loop {
         let mut mem = Mem::new();
         if let Err(msg) = mem.load_rom(0x8000, Path::new(&args[0])) {
             fatal_err(msg, 2);
@@ -69,6 +70,13 @@ fn main() {
             fatal_err("Can't load bootrom", 11);
         }
         mem.init_spe_reg();
+
+        if reset {
+            if let Some(vram) = &mut dbg.vram {
+                vram.update(&mut mem, true);
+            }
+            disp.reset();
+        }
 
         let mut regs = Regs::new();
         regs.init();
@@ -99,7 +107,8 @@ fn main() {
                 });
                 param = read_param(&mem, &mut regs.pc, op.len());
                 if !dbg.run(&mut mem, &mut regs, op, param) {
-                    continue 'restart;
+                    reset = true;
+                    break;
                 }
                 tmp = grr(&regs.pc).wrapping_add(op.len() as u16);
                 srr(&mut regs.pc, tmp);
@@ -114,6 +123,7 @@ fn main() {
             }
             timer.update(&mut mem, cycles);
             disp.update(&mut mem, cycles);
+            //            println!("0x{:04x}", grr(&regs.pc));
         }
     }
 }
