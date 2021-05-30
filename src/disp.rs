@@ -116,8 +116,6 @@ impl Display {
             + 1]
     }
 
-    //div inc every 64 m-cycle
-
     pub fn update(&mut self, m: MMy) {
         self.cycles -= 1;
         if self.cycles == 0 {

@@ -1,3 +1,4 @@
+use crate::mem::*;
 use std::fmt;
 
 pub struct Reg {
@@ -77,6 +78,46 @@ impl Regs {
         self.hl.set_16(0x014d);
         self.pc.set_16(0x0100);
         self.sp.set_16(0xfffe);
+    }
+
+    pub fn spe_to_str(&self, m: My) -> String {
+        format!(
+            "-------------------------------------------------------\n  \
+            LCD:                Timer:              Interrupt:\n\n  \
+            
+            LCDC = 0x{:02x}         DIV  = 0x{:02x}         IME = {}\n  \
+            STAT = 0x{:02x}         TIMA = 0x{:02x}         IE  = {:02x}\n  \
+            SCY  = 0x{:02x}         TMA  = 0x{:02x}         IF  = {:02x}\n  \
+            SCX  = 0x{:02x}         TAC  = 0x{:02x}\n  \
+            LY   = 0x{:02x}\n  \
+            LYC  = 0x{:02x}\n  \
+            DMA  = 0x{:02x}\n  \
+            BGP  = 0x{:02x}\n  \
+            OBP0 = 0x{:02x}\n  \
+            OBP1 = 0x{:02x}\n  \
+            WY   = 0x{:02x}\n  \
+            WX   = 0x{:02x}\n\
+            -------------------------------------------------------",
+            m.get(api::LCDC),
+            m.get(api::DIV),
+            api::grr(&self.ime) == 0,
+            m.get(api::STAT),
+            m.get(api::TIMA),
+            m.get(api::IE),
+            m.get(api::SCY),
+            m.get(api::TMA),
+            m.get(api::IF),
+            m.get(api::SCX),
+            m.get(api::TAC),
+            m.get(api::LY),
+            m.get(api::LYC),
+            m.get(api::DMA),
+            m.get(api::BGP),
+            m.get(api::OBP0),
+            m.get(api::OBP1),
+            m.get(api::WY),
+            m.get(api::WX),
+        )
     }
 }
 

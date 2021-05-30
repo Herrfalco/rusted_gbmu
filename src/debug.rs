@@ -32,9 +32,10 @@ enum Cmd {
     BLst,
     BAdd,
     BDel,
+    BDlA,
     BNxt,
     RShw,
-    RAShw,
+    Spe,
     Exit,
     VRam,
     Unknown,
@@ -65,10 +66,11 @@ impl<'a> Debugger {
                 regex!(r#"^\(0x([[:xdigit:]]{1,4})\)\s*=\s*0x([[:xdigit:]]{1,2})$"#i),
                 regex!(r#"^b$"#i),
                 regex!(r#"^b 0x([[:xdigit:]]{1,4})$"#i),
-                regex!(r#"^b del ([[:digit:]]+)$"#i),
+                regex!(r#"^d ([[:digit:]]+)$"#i),
+                regex!(r#"^da$"#i),
                 regex!(r#"^n$"#i),
                 regex!(r#"^r$"#i),
-                regex!(r#"^ra$"#i),
+                regex!(r#"^s$"#i),
                 regex!(r#"^exit$"#i),
                 regex!(r#"^vram$"#i),
             ],
@@ -280,6 +282,9 @@ impl<'a> Debugger {
                             self.brks.remove(tmp);
                         }
                     }
+                    Cmd::BDlA => {
+                        self.brks.clear();
+                    }
                     Cmd::BNxt => {
                         self.sbys = false;
                         break;
@@ -287,7 +292,9 @@ impl<'a> Debugger {
                     Cmd::RShw => {
                         println!("{}", r);
                     }
-                    Cmd::RAShw => println!("Error: Not implemented yet..."),
+                    Cmd::Spe => {
+                        println!("{}", r.spe_to_str(m));
+                    }
                     Cmd::Exit => {
                         exit(0);
                     }
@@ -380,15 +387,16 @@ mod tests {
             "b 0xff",
             "b 0xfffff",
             "b 0x",
-            "b del 10",
-            "b del 0",
-            "b del f",
+            "d 10",
+            "d 0",
+            "d f",
+            "da",
             "n",
             "n ",
             "r",
             "r ",
-            "ra",
-            " ra",
+            "s",
+            " s",
             "exit",
             " exit",
             "q",
@@ -442,11 +450,12 @@ mod tests {
             (true, Cmd::BDel, vec!["10"]),
             (true, Cmd::BDel, vec!["0"]),
             (false, Cmd::Unknown, vec![]),
+            (true, Cmd::BDlA, vec![]),
             (true, Cmd::BNxt, vec![]),
             (false, Cmd::Unknown, vec![]),
             (true, Cmd::RShw, vec![]),
             (false, Cmd::Unknown, vec![]),
-            (true, Cmd::RAShw, vec![]),
+            (true, Cmd::Spe, vec![]),
             (false, Cmd::Unknown, vec![]),
             (true, Cmd::Exit, vec![]),
             (false, Cmd::Unknown, vec![]),

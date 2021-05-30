@@ -82,6 +82,7 @@ fn main() {
         loop {
             if cycles == 0 {
                 if grr(&regs.ime) == 1 && ((mem.get(IE) & 0x1f) & (mem.get(IF) & 0x1f)) != 0 {
+                    println!("here");
                     cycles = handl_int(&mut mem, &mut regs);
                 } else {
                     opcode = read_opcode(&mem, &mut regs.pc);
