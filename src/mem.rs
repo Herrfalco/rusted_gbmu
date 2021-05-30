@@ -17,14 +17,21 @@ impl Mem {
     }
 
     pub fn get(&self, addr: u16) -> u8 {
+        if addr == P1 {
+            return 0xff;
+        }
         self.data[addr as usize]
     }
+
+    fn dma(&self, val: u8) {}
 
     pub fn set(&mut self, addr: u16, val: u8) {
         let mut tmp = val;
 
-        if addr == DIV {
-            tmp = 0
+        match addr {
+            DIV => tmp = 0,
+            DMA => return self.dma(val),
+            _ => (),
         }
         self.data[addr as usize] = tmp;
     }
@@ -42,7 +49,6 @@ impl Mem {
     }
 
     pub fn init_spe_reg(&mut self) {
-        self.set(P1, 0xf);
         self.set(DIV, 0x00);
         self.set(TIMA, 0x00);
         self.set(TMA, 0x00);

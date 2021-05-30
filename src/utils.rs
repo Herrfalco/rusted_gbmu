@@ -1,6 +1,6 @@
 use std::process::exit;
 
-pub const COLORS: [u32; 5] = [0xd6ecd2, 0x99d18f, 0x61bd4f, 0x519839, 0x3f6f21];
+pub const COLORS: [u32; 5] = [0xd9ffdb, 0x8fff94, 0x00cf0a, 0x006605, 0x002902];
 
 pub fn fatal_err(msg: &str, status: i32) -> ! {
     println!("Error: {}", msg);

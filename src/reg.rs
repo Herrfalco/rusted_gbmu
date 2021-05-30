@@ -76,7 +76,7 @@ impl Regs {
         self.bc.set_16(0x0013);
         self.de.set_16(0x00d8);
         self.hl.set_16(0x014d);
-        self.pc.set_16(0x0100);
+        self.pc.set_16(0x0000);
         self.sp.set_16(0xfffe);
     }
 
@@ -100,7 +100,7 @@ impl Regs {
             -------------------------------------------------------",
             m.get(api::LCDC),
             m.get(api::DIV),
-            api::grr(&self.ime) == 0,
+            api::grr(&self.ime) == 1,
             m.get(api::STAT),
             m.get(api::TIMA),
             m.get(api::IE),

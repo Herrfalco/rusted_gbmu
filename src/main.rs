@@ -33,7 +33,7 @@ fn read_param(mem: My, pc: MRR, len: usize) -> u16 {
     result
 }
 
-fn handl_int(m: &mut Mem, r: &mut Regs) -> usize {
+fn handl_int(m: &mut Mem, r: &mut Regs) {
     srr(&mut r.ime, 0);
     for i in 0..5 {
         if (0x1 << i) & (m.get(IE) & 0x1f) & (m.get(IF) & 0x1f) != 0 {
@@ -49,7 +49,6 @@ fn handl_int(m: &mut Mem, r: &mut Regs) -> usize {
             break;
         }
     }
-    4
 }
 
 fn main() {
@@ -66,6 +65,9 @@ fn main() {
         if let Err(msg) = mem.load_rom(0x8000, Path::new(&args[0])) {
             fatal_err(msg, 2);
         }
+        if let Err(_) = mem.load_rom(0x100, Path::new("../roms/DMG_ROM.gb")) {
+            fatal_err("Can't load bootrom", 11);
+        }
         mem.init_spe_reg();
 
         let mut regs = Regs::new();
@@ -78,38 +80,40 @@ fn main() {
         let mut op: &Op;
         let mut param: u16;
         let mut tmp: u16;
-        let mut cycles: usize = 0;
+        let mut cycles: usize;
+        let mut boot_rom = true;
         loop {
-            if cycles == 0 {
-                if grr(&regs.ime) == 1 && ((mem.get(IE) & 0x1f) & (mem.get(IF) & 0x1f)) != 0 {
-                    println!("here");
-                    cycles = handl_int(&mut mem, &mut regs);
-                } else {
-                    opcode = read_opcode(&mem, &mut regs.pc);
-                    op = &ops.get(opcode).unwrap_or_else(|| {
-                        fatal_err(&format!("Opcode 0x{:02x} not implemented", opcode.0), 3)
-                    });
-                    param = read_param(&mem, &mut regs.pc, op.len());
-                    if !dbg.run(&mut mem, &mut regs, op, param) {
-                        continue 'restart;
-                    }
-                    tmp = grr(&regs.pc).wrapping_add(op.len() as u16);
-                    srr(&mut regs.pc, tmp);
-                    cycles = if op.exec(&mut regs, &mut mem, param) {
-                        op.cycles.0
-                    } else {
-                        op.cycles.1
-                    } / 4
-                        - 1;
-                    if grr(&regs.ime) > 1 {
-                        dec_rr(&mut regs.ime);
-                    }
+            if boot_rom && grr(&regs.pc) == 0x100 {
+                if let Err(_) = mem.load_rom(0x100, Path::new(&args[0])) {
+                    fatal_err("Can't disable bootrom", 20);
                 }
-            } else {
-                cycles -= 1;
+                boot_rom = false;
             }
-            timer.update(&mut mem);
-            disp.update(&mut mem);
+            if grr(&regs.ime) == 1 && ((mem.get(IE) & 0x1f) & (mem.get(IF) & 0x1f)) != 0 {
+                handl_int(&mut mem, &mut regs);
+                cycles = 20;
+            } else {
+                opcode = read_opcode(&mem, &mut regs.pc);
+                op = &ops.get(opcode).unwrap_or_else(|| {
+                    fatal_err(&format!("Opcode 0x{:02x} not implemented", opcode.0), 3)
+                });
+                param = read_param(&mem, &mut regs.pc, op.len());
+                if !dbg.run(&mut mem, &mut regs, op, param) {
+                    continue 'restart;
+                }
+                tmp = grr(&regs.pc).wrapping_add(op.len() as u16);
+                srr(&mut regs.pc, tmp);
+                cycles = if op.exec(&mut regs, &mut mem, param) {
+                    op.cycles.0
+                } else {
+                    op.cycles.1
+                };
+                if grr(&regs.ime) > 1 {
+                    dec_rr(&mut regs.ime);
+                }
+            }
+            timer.update(&mut mem, cycles);
+            disp.update(&mut mem, cycles);
         }
     }
 }
