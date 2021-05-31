@@ -32,6 +32,7 @@ enum Cmd {
     BDel,
     BDlA,
     BNxt,
+    BNxtN,
     RShw,
     Spe,
     Exit,
@@ -105,6 +106,7 @@ pub struct Debugger {
     debug: bool,
     brks: Vec<u16>,
     sbys: bool,
+    n_times: usize,
     pub vram: Option<VramDisp>,
 }
 
@@ -126,6 +128,7 @@ impl<'a> Debugger {
                 regex!(r#"^d ([[:digit:]]+)$"#i),
                 regex!(r#"^da$"#i),
                 regex!(r#"^n$"#i),
+                regex!(r#"^n ([[:digit:]]+)$"#i),
                 regex!(r#"^r$"#i),
                 regex!(r#"^s$"#i),
                 regex!(r#"^exit$"#i),
@@ -134,6 +137,7 @@ impl<'a> Debugger {
             edit: Editor::new(),
             debug,
             brks: Vec::new(),
+            n_times: 0,
             sbys: true,
             vram: None,
         };
@@ -297,6 +301,11 @@ impl<'a> Debugger {
                         self.sbys = false;
                         break;
                     }
+                    Cmd::BNxtN => {
+                        self.sbys = false;
+                        self.n_times = usize::from_str_radix(&par[0], 10).unwrap();
+                        break;
+                    }
                     Cmd::RShw => {
                         println!("{}", r);
                     }
@@ -329,7 +338,7 @@ impl<'a> Debugger {
                     self.vram = None;
                 }
             }
-            if self.sbys || self.brks.contains(&grr(&r.pc)) {
+            if self.sbys || (self.brks.contains(&grr(&r.pc)) && self.n_times == 0) {
                 self.sbys = true;
 
                 let fm_par: String;
@@ -346,6 +355,8 @@ impl<'a> Debugger {
                     format!("{}", op).replace("#", &fm_par)
                 );
                 return self.get_cmd(m, r);
+            } else if self.n_times > 0 {
+                self.n_times -= 1;
             }
         }
         true
@@ -410,6 +421,7 @@ mod tests {
             "da",
             "n",
             "n ",
+            "n 10",
             "r",
             "r ",
             "s",
@@ -470,6 +482,7 @@ mod tests {
             (true, Cmd::BDlA, vec![]),
             (true, Cmd::BNxt, vec![]),
             (false, Cmd::Unknown, vec![]),
+            (true, Cmd::BNxtN, vec!["10"]),
             (true, Cmd::RShw, vec![]),
             (false, Cmd::Unknown, vec![]),
             (true, Cmd::Spe, vec![]),

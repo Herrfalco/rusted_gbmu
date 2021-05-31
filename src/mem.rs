@@ -16,27 +16,44 @@ impl Mem {
         }
     }
 
-    pub fn get(&self, addr: u16) -> u8 {
-        if addr == P1 {
-            return 0xff;
-        }
-        self.data[addr as usize]
-    }
-
     fn dma(&mut self, val: u8) {
-        let tmp = (val as u16) << 2;
+        let tmp = (val as u16) << 8;
 
         for i in 0x0..0x9f {
-            self.set(0xfe00 | i, self.get(tmp | i));
+            self.oam_set(0xfe00 | i, self.get(tmp | i), true);
         }
+    }
+
+    pub fn get(&self, addr: u16) -> u8 {
+        self.oam_get(addr, false)
+    }
+
+    pub fn oam_get(&self, addr: u16, oam: bool) -> u8 {
+        match addr {
+            P1 => return 0xff,
+            0xfe00..=0xfeff if !oam => match self.data[STAT as usize] & 0x3 {
+                2 | 3 => return 0xff,
+                _ => (),
+            },
+            _ => (),
+        }
+        return self.data[addr as usize];
     }
 
     pub fn set(&mut self, addr: u16, val: u8) {
+        self.oam_set(addr, val, false);
+    }
+
+    pub fn oam_set(&mut self, addr: u16, val: u8, oam: bool) {
         let mut tmp = val;
 
         match addr {
             DIV => tmp = 0,
             DMA => return self.dma(val),
+            0xfe00..=0xfe9f if !oam => match self.data[STAT as usize] & 0x3 {
+                2 | 3 => return,
+                _ => (),
+            },
             _ => (),
         }
         self.data[addr as usize] = tmp;
