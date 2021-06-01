@@ -6,7 +6,7 @@ pub struct Sprite {
     tile: u16,
     under: bool,
     flip: (bool, bool),
-    pal: u16,
+    pal: u8,
 }
 
 impl Sprite {
@@ -22,12 +22,12 @@ impl Sprite {
             tile: 0x8000 | m.su_get(addr + 2) as u16 * 16,
             under: attr & 0x80 != 0,
             flip: (attr & 0x20 != 0, attr & 0x40 != 0),
-            pal: if attr & 0x10 != 0 { OBP1 } else { OBP0 },
+            pal: m.su_get(if attr & 0x10 != 0 { OBP1 } else { OBP0 }),
         }
     }
 
-    pub fn get_pix(&self, m: My, x: usize) -> Option<u8> {
-        if !(self.pos.0..(self.pos.0 + 8)).contains(&(x as isize)) {
+    pub fn get_pix(&self, m: My, x: usize) -> Option<(u8, u8, bool)> {
+        if m.su_get(LCDC) & 0x2 == 0 || !(self.pos.0..(self.pos.0 + 8)).contains(&(x as isize)) {
             return None;
         }
 
@@ -49,7 +49,11 @@ impl Sprite {
         };
         let bit1 = (m.su_get(byte as u16) >> i) & 0x1;
         let bit2 = ((m.su_get(byte as u16 + 1) >> i) & 0x1) << 1;
-        Some(bit1 | bit2)
+        let result = bit1 | bit2;
+        match result {
+            0 => None,
+            _ => Some((bit1 | bit2, self.pal, self.under)),
+        }
     }
 
     pub fn update(sprites: &mut Vec<Sprite>, m: My) {
