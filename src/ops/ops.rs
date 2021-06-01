@@ -486,7 +486,7 @@ impl Ops {
             add_n(&mut _r.af, gr((&_r.hl, D)))
         }));
         ops[0x86] = Some(Op::new("ADD A, (HL)", 1, (8, 0), |_r, _m, _p| -> bool {
-            add_n(&mut _r.af, _m.get(grr(&_r.hl)))
+            add_n(&mut _r.af, _m.nu_get(grr(&_r.hl)))
         }));
         ops[0x87] = Some(Op::new("ADD A, A", 1, (4, 0), |_r, _m, _p| -> bool {
             let tmp = gr((&_r.af, U));
@@ -512,7 +512,7 @@ impl Ops {
             adc_n(&mut _r.af, gr((&_r.hl, D)))
         }));
         ops[0x8e] = Some(Op::new("ADC A, (HL)", 1, (8, 0), |_r, _m, _p| -> bool {
-            adc_n(&mut _r.af, _m.get(grr(&_r.hl)))
+            adc_n(&mut _r.af, _m.nu_get(grr(&_r.hl)))
         }));
         ops[0x8f] = Some(Op::new("ADC A, A", 1, (4, 0), |_r, _m, _p| -> bool {
             let tmp = gr((&_r.af, U));
@@ -538,7 +538,7 @@ impl Ops {
             sub_n(&mut _r.af, gr((&_r.hl, D)))
         }));
         ops[0x96] = Some(Op::new("SUB A, (HL)", 1, (8, 0), |_r, _m, _p| -> bool {
-            sub_n(&mut _r.af, _m.get(grr(&_r.hl)))
+            sub_n(&mut _r.af, _m.nu_get(grr(&_r.hl)))
         }));
         ops[0x97] = Some(Op::new("SUB A, A", 1, (4, 0), |_r, _m, _p| -> bool {
             let tmp = gr((&_r.af, U));
@@ -564,7 +564,7 @@ impl Ops {
             sbc_n(&mut _r.af, gr((&_r.hl, D)))
         }));
         ops[0x9e] = Some(Op::new("SBC A, (HL)", 1, (8, 0), |_r, _m, _p| -> bool {
-            sbc_n(&mut _r.af, _m.get(grr(&_r.hl)))
+            sbc_n(&mut _r.af, _m.nu_get(grr(&_r.hl)))
         }));
         ops[0x9f] = Some(Op::new("SBC A, A", 1, (4, 0), |_r, _m, _p| -> bool {
             let tmp = gr((&_r.af, U));
@@ -590,7 +590,7 @@ impl Ops {
             and_n(&mut _r.af, gr((&_r.hl, D)))
         }));
         ops[0xa6] = Some(Op::new("AND A, (HL)", 1, (8, 0), |_r, _m, _p| -> bool {
-            and_n(&mut _r.af, _m.get(grr(&_r.hl)))
+            and_n(&mut _r.af, _m.nu_get(grr(&_r.hl)))
         }));
         ops[0xa7] = Some(Op::new("AND A, A", 1, (4, 0), |_r, _m, _p| -> bool {
             let tmp = gr((&_r.af, U));
@@ -616,7 +616,7 @@ impl Ops {
             xor_n(&mut _r.af, gr((&_r.hl, D)))
         }));
         ops[0xae] = Some(Op::new("XOR A, (HL)", 1, (8, 0), |_r, _m, _p| -> bool {
-            xor_n(&mut _r.af, _m.get(grr(&_r.hl)))
+            xor_n(&mut _r.af, _m.nu_get(grr(&_r.hl)))
         }));
         ops[0xaf] = Some(Op::new("XOR A, A", 1, (4, 0), |_r, _m, _p| -> bool {
             let tmp = gr((&_r.af, U));
@@ -642,7 +642,7 @@ impl Ops {
             or_n(&mut _r.af, gr((&_r.hl, D)))
         }));
         ops[0xb6] = Some(Op::new("OR A, (HL)", 1, (8, 0), |_r, _m, _p| -> bool {
-            or_n(&mut _r.af, _m.get(grr(&_r.hl)))
+            or_n(&mut _r.af, _m.nu_get(grr(&_r.hl)))
         }));
         ops[0xb7] = Some(Op::new("OR A, A", 1, (4, 0), |_r, _m, _p| -> bool {
             let tmp = gr((&_r.af, U));
@@ -668,7 +668,7 @@ impl Ops {
             cp_n(&mut _r.af, gr((&_r.hl, D)))
         }));
         ops[0xbe] = Some(Op::new("CP A, (HL)", 1, (8, 0), |_r, _m, _p| -> bool {
-            cp_n(&mut _r.af, _m.get(grr(&_r.hl)))
+            cp_n(&mut _r.af, _m.nu_get(grr(&_r.hl)))
         }));
         ops[0xbf] = Some(Op::new("CP A, A", 1, (4, 0), |_r, _m, _p| -> bool {
             let tmp = gr((&_r.af, U));
@@ -1068,7 +1068,7 @@ impl Ops {
             bit_msk_n(&mut _r.af, 0x1, gr((&_r.hl, D)))
         }));
         ops[0x146] = Some(Op::new("BIT 0, (HL)", 2, (12, 0), |_r, _m, _p| -> bool {
-            bit_msk_n(&mut _r.af, 0x1, _m.get(grr(&_r.hl)))
+            bit_msk_n(&mut _r.af, 0x1, _m.nu_get(grr(&_r.hl)))
         }));
         ops[0x147] = Some(Op::new("BIT 0, A", 2, (8, 0), |_r, _m, _p| -> bool {
             let tmp = gr((&_r.af, U));
@@ -1094,7 +1094,7 @@ impl Ops {
             bit_msk_n(&mut _r.af, 0x2, gr((&_r.hl, D)))
         }));
         ops[0x14e] = Some(Op::new("BIT 1, (HL)", 2, (12, 0), |_r, _m, _p| -> bool {
-            bit_msk_n(&mut _r.af, 0x2, _m.get(grr(&_r.hl)))
+            bit_msk_n(&mut _r.af, 0x2, _m.nu_get(grr(&_r.hl)))
         }));
         ops[0x14f] = Some(Op::new("BIT 1, A", 2, (8, 0), |_r, _m, _p| -> bool {
             let tmp = gr((&_r.af, U));
@@ -1120,7 +1120,7 @@ impl Ops {
             bit_msk_n(&mut _r.af, 0x4, gr((&_r.hl, D)))
         }));
         ops[0x156] = Some(Op::new("BIT 2, (HL)", 2, (12, 0), |_r, _m, _p| -> bool {
-            bit_msk_n(&mut _r.af, 0x4, _m.get(grr(&_r.hl)))
+            bit_msk_n(&mut _r.af, 0x4, _m.nu_get(grr(&_r.hl)))
         }));
         ops[0x157] = Some(Op::new("BIT 2, A", 2, (8, 0), |_r, _m, _p| -> bool {
             let tmp = gr((&_r.af, U));
@@ -1146,7 +1146,7 @@ impl Ops {
             bit_msk_n(&mut _r.af, 0x8, gr((&_r.hl, D)))
         }));
         ops[0x15e] = Some(Op::new("BIT 3, (HL)", 2, (12, 0), |_r, _m, _p| -> bool {
-            bit_msk_n(&mut _r.af, 0x8, _m.get(grr(&_r.hl)))
+            bit_msk_n(&mut _r.af, 0x8, _m.nu_get(grr(&_r.hl)))
         }));
         ops[0x15f] = Some(Op::new("BIT 3, A", 2, (8, 0), |_r, _m, _p| -> bool {
             let tmp = gr((&_r.af, U));
@@ -1172,7 +1172,7 @@ impl Ops {
             bit_msk_n(&mut _r.af, 0x10, gr((&_r.hl, D)))
         }));
         ops[0x166] = Some(Op::new("BIT 4, (HL)", 2, (12, 0), |_r, _m, _p| -> bool {
-            bit_msk_n(&mut _r.af, 0x10, _m.get(grr(&_r.hl)))
+            bit_msk_n(&mut _r.af, 0x10, _m.nu_get(grr(&_r.hl)))
         }));
         ops[0x167] = Some(Op::new("BIT 4, A", 2, (8, 0), |_r, _m, _p| -> bool {
             let tmp = gr((&_r.af, U));
@@ -1198,7 +1198,7 @@ impl Ops {
             bit_msk_n(&mut _r.af, 0x20, gr((&_r.hl, D)))
         }));
         ops[0x16e] = Some(Op::new("BIT 5, (HL)", 2, (12, 0), |_r, _m, _p| -> bool {
-            bit_msk_n(&mut _r.af, 0x20, _m.get(grr(&_r.hl)))
+            bit_msk_n(&mut _r.af, 0x20, _m.nu_get(grr(&_r.hl)))
         }));
         ops[0x16f] = Some(Op::new("BIT 5, A", 2, (8, 0), |_r, _m, _p| -> bool {
             let tmp = gr((&_r.af, U));
@@ -1224,7 +1224,7 @@ impl Ops {
             bit_msk_n(&mut _r.af, 0x40, gr((&_r.hl, D)))
         }));
         ops[0x176] = Some(Op::new("BIT 6, (HL)", 2, (12, 0), |_r, _m, _p| -> bool {
-            bit_msk_n(&mut _r.af, 0x40, _m.get(grr(&_r.hl)))
+            bit_msk_n(&mut _r.af, 0x40, _m.nu_get(grr(&_r.hl)))
         }));
         ops[0x177] = Some(Op::new("BIT 6, A", 2, (8, 0), |_r, _m, _p| -> bool {
             let tmp = gr((&_r.af, U));
@@ -1250,7 +1250,7 @@ impl Ops {
             bit_msk_n(&mut _r.af, 0x80, gr((&_r.hl, D)))
         }));
         ops[0x17e] = Some(Op::new("BIT 7, (HL)", 2, (12, 0), |_r, _m, _p| -> bool {
-            bit_msk_n(&mut _r.af, 0x80, _m.get(grr(&_r.hl)))
+            bit_msk_n(&mut _r.af, 0x80, _m.nu_get(grr(&_r.hl)))
         }));
         ops[0x17f] = Some(Op::new("BIT 7, A", 2, (8, 0), |_r, _m, _p| -> bool {
             let tmp = gr((&_r.af, U));
@@ -1689,7 +1689,7 @@ mod tests {
             }),
             Op::new("TEST5", 1, (1, 0), |_r, _m, _p| -> bool {
                 sf((&mut _r.af, CY), false);
-                _m.set(0xff, 0xf);
+                _m.su_set(0xff, 0xf);
                 true
             }),
         ];
@@ -1705,7 +1705,7 @@ mod tests {
         assert_eq!(grr(&regs.af), 0xff7f);
         (ops[4].func)(&mut regs, &mut mem, 0);
         assert_eq!(gf((&regs.af, CY)), false);
-        assert_eq!(mem.get(0xff), 0xf);
+        assert_eq!(mem.su_get(0xff), 0xf);
     }
 
     #[test]

@@ -9,7 +9,6 @@ use num_traits::FromPrimitive;
 use regex::Regex;
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
-use std::process::exit;
 use std::str::FromStr;
 
 const VRAM_W: usize = 128;
@@ -75,8 +74,8 @@ impl VramDisp {
             for y in 0..24 {
                 for x in 0..16 {
                     for z in 0..8 {
-                        b1 = m.get((0x8000 + y * 256 + x * 16 + z * 2) as u16);
-                        b2 = m.get((0x8000 + y * 256 + x * 16 + z * 2 + 1) as u16);
+                        b1 = m.su_get((0x8000 + y * 256 + x * 16 + z * 2) as u16);
+                        b2 = m.su_get((0x8000 + y * 256 + x * 16 + z * 2 + 1) as u16);
 
                         let mut tmp;
                         for i in 0..8 {
@@ -205,7 +204,7 @@ impl<'a> Debugger {
                     i.wrapping_add(addr)
                 );
             }
-            print!("{:02x} ", m.get(i.wrapping_add(addr)));
+            print!("{:02x} ", m.nu_get(i.wrapping_add(addr)));
         }
         println!("\n-------------------------------------------------------");
     }
@@ -265,12 +264,12 @@ impl<'a> Debugger {
                     Cmd::SArrN => {
                         let tmp1 = Debugger::rr_by_nm(r, &par[0]).unwrap();
                         let tmp2 = u8::from_str_radix(&par[1], 16).unwrap();
-                        m.set(grr(tmp1), tmp2);
+                        m.su_set(grr(tmp1), tmp2);
                     }
                     Cmd::SAnnN => {
                         let tmp1 = u16::from_str_radix(&par[0], 16).unwrap();
                         let tmp2 = u8::from_str_radix(&par[1], 16).unwrap();
-                        m.set(tmp1, tmp2);
+                        m.su_set(tmp1, tmp2);
                     }
                     Cmd::BLst => {
                         println!("-------------------------------------------------------");
@@ -313,7 +312,7 @@ impl<'a> Debugger {
                         println!("{}", r.spe_to_str(m));
                     }
                     Cmd::Exit => {
-                        exit(0);
+                        quit::with_code(0);
                     }
                     Cmd::VRam => {
                         if let None = self.vram {

@@ -24,11 +24,11 @@ impl Timer {
     }
 
     fn new_tima_cy(&mut self, m: My) {
-        let tmp = m.get(TAC) & 0x3;
+        let tmp = m.su_get(TAC) & 0x3;
 
         if self.tac_sav != tmp {
             self.tac_sav = tmp;
-            self.tima_cy_sav = match m.get(TAC) & 0x3 {
+            self.tima_cy_sav = match m.su_get(TAC) & 0x3 {
                 0 => 1024,
                 1 => 16,
                 2 => 64,
@@ -42,21 +42,21 @@ impl Timer {
     pub fn update(&mut self, m: MMy, cy: usize) {
         if cy >= self.div_cy {
             self.div_cy = div_t - (cy - self.div_cy);
-            m.set(DIV, m.get(DIV).wrapping_add(1));
+            m.su_set(DIV, m.su_get(DIV).wrapping_add(1));
         } else {
             self.div_cy -= cy;
         }
         self.new_tima_cy(m);
-        if m.get(TAC) & 0x4 != 0 {
+        if m.su_get(TAC) & 0x4 != 0 {
             if cy >= self.tima_cy {
-                let mut tmp = m.get(TIMA).wrapping_add(1);
+                let mut tmp = m.su_get(TIMA).wrapping_add(1);
 
                 self.tima_cy = self.tima_cy_sav - (cy - self.tima_cy);
                 if tmp == 0 {
-                    tmp = m.get(TMA);
-                    m.set(IF, m.get(IF) | 0x4);
+                    tmp = m.su_get(TMA);
+                    m.su_set(IF, m.su_get(IF) | 0x4);
                 }
-                m.set(TIMA, tmp);
+                m.su_set(TIMA, tmp);
             } else {
                 self.tima_cy -= cy;
             }

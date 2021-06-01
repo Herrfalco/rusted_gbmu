@@ -5,3 +5,8 @@ match to unwrap_or_else
 b already set
 search for println
 clickable vram display
+verify su get su set
+
+track leaks
+use return instead of quit
+static lazy regex ~

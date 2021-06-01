@@ -1,5 +1,6 @@
 mod debug;
 mod disp;
+mod input;
 mod mem;
 mod ops;
 mod reg;
@@ -18,17 +19,17 @@ use std::path::Path;
 use timer::*;
 use utils::*;
 
-const DEBUG: bool = true;
+const DEBUG: bool = false;
 
 fn read_opcode(mem: My, pc: RR) -> (u8, u8) {
-    (mem.get(grr(pc)), mem.get(grr(pc).wrapping_add(1)))
+    (mem.su_get(grr(pc)), mem.su_get(grr(pc).wrapping_add(1)))
 }
 
 fn read_param(mem: My, pc: MRR, len: usize) -> u16 {
     let mut result: u16 = 0;
 
     for i in 1..len as u16 {
-        result |= (mem.get(grr(pc).wrapping_add(i)) as u16) << (8 * (i - 1));
+        result |= (mem.su_get(grr(pc).wrapping_add(i)) as u16) << (8 * (i - 1));
     }
     result
 }
@@ -36,8 +37,8 @@ fn read_param(mem: My, pc: MRR, len: usize) -> u16 {
 fn handl_int(m: &mut Mem, r: &mut Regs) {
     srr(&mut r.ime, 0);
     for i in 0..5 {
-        if (0x1 << i) & (m.get(IE) & 0x1f) & (m.get(IF) & 0x1f) != 0 {
-            m.set(IF, m.get(IF) & !(0x1 << i));
+        if (0x1 << i) & (m.su_get(IE) & 0x1f) & (m.su_get(IF) & 0x1f) != 0 {
+            m.su_set(IF, m.su_get(IF) & !(0x1 << i));
             match i {
                 0 => rst(m, &mut r.sp, &mut r.pc, 0x40),
                 1 => rst(m, &mut r.sp, &mut r.pc, 0x48),
@@ -51,6 +52,7 @@ fn handl_int(m: &mut Mem, r: &mut Regs) {
     }
 }
 
+#[quit::main]
 fn main() {
     let mut reset = false;
     let mut dbg = Debugger::new(DEBUG);
@@ -97,7 +99,7 @@ fn main() {
                 }
                 boot_rom = false;
             }
-            if grr(&regs.ime) == 1 && ((mem.get(IE) & 0x1f) & (mem.get(IF) & 0x1f)) != 0 {
+            if grr(&regs.ime) == 1 && ((mem.su_get(IE) & 0x1f) & (mem.su_get(IF) & 0x1f)) != 0 {
                 handl_int(&mut mem, &mut regs);
                 cycles = 20;
             } else {
@@ -123,7 +125,6 @@ fn main() {
             }
             timer.update(&mut mem, cycles);
             disp.update(&mut mem, cycles);
-            //            println!("0x{:04x}", grr(&regs.pc));
         }
     }
 }

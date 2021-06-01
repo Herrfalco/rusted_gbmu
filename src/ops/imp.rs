@@ -9,22 +9,22 @@ pub fn ld_r_n(r: MR, n: u8) -> bool {
 }
 
 pub fn ld_ann_n(m: MMy, nn: u16, n: u8) -> bool {
-    m.set(nn, n);
+    m.nu_set(nn, n);
     true
 }
 
 pub fn ld_r_ann(m: My, r: MR, nn: u16) -> bool {
-    sr(r, m.get(nn));
+    sr(r, m.nu_get(nn));
     true
 }
 
 pub fn ldh_an_r(m: MMy, n: u8, r: R) -> bool {
-    m.set(n as u16 | 0xff00, gr(r));
+    m.nu_set(n as u16 | 0xff00, gr(r));
     true
 }
 
 pub fn ldh_r_an(m: My, r: MR, n: u8) -> bool {
-    sr(r, m.get(n as u16 | 0xff00));
+    sr(r, m.nu_get(n as u16 | 0xff00));
     true
 }
 
@@ -64,8 +64,8 @@ pub fn ld_rr_nn(rr: MRR, nn: u16) -> bool {
 }
 
 pub fn ld_ann_rr(m: MMy, nn: u16, rr: RR) -> bool {
-    m.set(nn, gr((rr, D)));
-    m.set(nn.wrapping_add(1), gr((rr, U)));
+    m.nu_set(nn, gr((rr, D)));
+    m.nu_set(nn.wrapping_add(1), gr((rr, U)));
     true
 }
 
@@ -81,18 +81,18 @@ pub fn ld_rr_rrpsn(f: MRR, rr1: MRR, rr2: RR, sn: i8) -> bool {
 }
 
 pub fn pop_rr_arr(m: My, rr1: MRR, rr2: MRR) -> bool {
-    sr((rr1, D), m.get(grr(rr2)));
+    sr((rr1, D), m.nu_get(grr(rr2)));
     srr(rr2, grr(rr2).wrapping_add(1));
-    sr((rr1, U), m.get(grr(rr2)));
+    sr((rr1, U), m.nu_get(grr(rr2)));
     srr(rr2, grr(rr2).wrapping_add(1));
     true
 }
 
 pub fn push_arr_rr(m: MMy, rr1: MRR, rr2: RR) -> bool {
     srr(rr1, grr(rr1).wrapping_sub(1));
-    m.set(grr(rr1), gr((rr2, U)));
+    m.nu_set(grr(rr1), gr((rr2, U)));
     srr(rr1, grr(rr1).wrapping_sub(1));
-    m.set(grr(rr1), gr((rr2, D)));
+    m.nu_set(grr(rr1), gr((rr2, D)));
     true
 }
 
@@ -236,10 +236,10 @@ pub fn dec(af: MRR) -> bool {
 }
 
 pub fn inc_arr(f: MRR, m: MMy, rr: RR) -> bool {
-    let tmp = m.get(grr(rr));
+    let tmp = m.nu_get(grr(rr));
     let result = tmp.wrapping_add(1);
 
-    m.set(grr(rr), result);
+    m.nu_set(grr(rr), result);
     sf((f, Z), result == 0);
     sf((f, N), false);
     sf((f, H), (tmp & 0xf) + 1 > 0xf);
@@ -247,10 +247,10 @@ pub fn inc_arr(f: MRR, m: MMy, rr: RR) -> bool {
 }
 
 pub fn dec_arr(f: MRR, m: MMy, rr: RR) -> bool {
-    let tmp = m.get(grr(rr));
+    let tmp = m.nu_get(grr(rr));
     let result = tmp.wrapping_sub(1);
 
-    m.set(grr(rr), result);
+    m.nu_set(grr(rr), result);
     sf((f, Z), result == 0);
     sf((f, N), true);
     sf((f, H), (tmp & 0xf) == 0);
@@ -453,14 +453,14 @@ pub fn rlc_r(af: MRR, r: MR) -> bool {
 }
 
 pub fn rlc_arr(af: MRR, m: MMy, rr: RR) -> bool {
-    let tmp = m.get(grr(rr));
+    let tmp = m.nu_get(grr(rr));
     let result = (tmp << 1) | (tmp >> 7);
 
     sf((af, Z), result == 0);
     sf((af, N), false);
     sf((af, H), false);
     sf((af, CY), if tmp & 0x80 == 0 { false } else { true });
-    m.set(grr(rr), result);
+    m.nu_set(grr(rr), result);
     true
 }
 
@@ -478,7 +478,7 @@ pub fn rl_r(af: MRR, r: MR) -> bool {
 }
 
 pub fn rl_arr(af: MRR, m: MMy, rr: RR) -> bool {
-    let tmp = m.get(grr(rr));
+    let tmp = m.nu_get(grr(rr));
     let cy = if gf((af, CY)) { 1 } else { 0 };
     let result = (tmp << 1) | cy;
 
@@ -486,7 +486,7 @@ pub fn rl_arr(af: MRR, m: MMy, rr: RR) -> bool {
     sf((af, N), false);
     sf((af, H), false);
     sf((af, CY), if tmp & 0x80 == 0 { false } else { true });
-    m.set(grr(rr), result);
+    m.nu_set(grr(rr), result);
     true
 }
 
@@ -503,14 +503,14 @@ pub fn rrc_r(af: MRR, r: MR) -> bool {
 }
 
 pub fn rrc_arr(af: MRR, m: MMy, rr: RR) -> bool {
-    let tmp = m.get(grr(rr));
+    let tmp = m.nu_get(grr(rr));
     let result = (tmp >> 1) | (tmp << 7);
 
     sf((af, Z), result == 0);
     sf((af, N), false);
     sf((af, H), false);
     sf((af, CY), if tmp & 0x1 == 0 { false } else { true });
-    m.set(grr(rr), result);
+    m.nu_set(grr(rr), result);
     true
 }
 
@@ -528,7 +528,7 @@ pub fn rr_r(af: MRR, r: MR) -> bool {
 }
 
 pub fn rr_arr(af: MRR, m: MMy, rr: RR) -> bool {
-    let tmp = m.get(grr(rr));
+    let tmp = m.nu_get(grr(rr));
     let cy = if gf((af, CY)) { 0x80 } else { 0 };
     let result = (tmp >> 1) | cy;
 
@@ -536,7 +536,7 @@ pub fn rr_arr(af: MRR, m: MMy, rr: RR) -> bool {
     sf((af, N), false);
     sf((af, H), false);
     sf((af, CY), if tmp & 0x1 == 0 { false } else { true });
-    m.set(grr(rr), result);
+    m.nu_set(grr(rr), result);
     true
 }
 
@@ -565,14 +565,14 @@ pub fn sla_r(af: MRR, r: MR) -> bool {
 }
 
 pub fn sla_arr(af: MRR, m: MMy, rr: RR) -> bool {
-    let tmp = m.get(grr(rr));
+    let tmp = m.nu_get(grr(rr));
     let result = tmp << 1;
 
     sf((af, Z), result == 0);
     sf((af, N), false);
     sf((af, H), false);
     sf((af, CY), if tmp & 0x80 == 0 { false } else { true });
-    m.set(grr(rr), result);
+    m.nu_set(grr(rr), result);
     true
 }
 
@@ -601,14 +601,14 @@ pub fn sra_r(af: MRR, r: MR) -> bool {
 }
 
 pub fn sra_arr(af: MRR, m: MMy, rr: RR) -> bool {
-    let tmp = m.get(grr(rr));
+    let tmp = m.nu_get(grr(rr));
     let result = (tmp >> 1) | (tmp & 0x80);
 
     sf((af, Z), result == 0);
     sf((af, N), false);
     sf((af, H), false);
     sf((af, CY), if tmp & 0x1 == 0 { false } else { true });
-    m.set(grr(rr), result);
+    m.nu_set(grr(rr), result);
     true
 }
 
@@ -637,14 +637,14 @@ pub fn srl_r(af: MRR, r: MR) -> bool {
 }
 
 pub fn srl_arr(af: MRR, m: MMy, rr: RR) -> bool {
-    let tmp = m.get(grr(rr));
+    let tmp = m.nu_get(grr(rr));
     let result = tmp >> 1;
 
     sf((af, Z), result == 0);
     sf((af, N), false);
     sf((af, H), false);
     sf((af, CY), if tmp & 0x1 == 0 { false } else { true });
-    m.set(grr(rr), result);
+    m.nu_set(grr(rr), result);
     true
 }
 
@@ -673,14 +673,14 @@ pub fn swap_r(af: MRR, r: MR) -> bool {
 }
 
 pub fn swap_arr(af: MRR, m: MMy, rr: RR) -> bool {
-    let tmp = m.get(grr(rr));
+    let tmp = m.nu_get(grr(rr));
     let result = (tmp >> 4) | (tmp << 4);
 
     sf((af, Z), result == 0);
     sf((af, N), false);
     sf((af, H), false);
     sf((af, CY), false);
-    m.set(grr(rr), result);
+    m.nu_set(grr(rr), result);
     true
 }
 
@@ -699,7 +699,7 @@ pub fn res_msk_r(msk: u8, r: MR) -> bool {
 }
 
 pub fn res_msk_arr(m: MMy, msk: u8, rr: RR) -> bool {
-    m.set(grr(rr), m.get(grr(rr)) & !msk);
+    m.nu_set(grr(rr), m.nu_get(grr(rr)) & !msk);
     true
 }
 
@@ -711,7 +711,7 @@ pub fn set_msk_r(msk: u8, r: MR) -> bool {
 }
 
 pub fn set_msk_arr(m: MMy, msk: u8, rr: RR) -> bool {
-    m.set(grr(rr), m.get(grr(rr)) | msk);
+    m.nu_set(grr(rr), m.nu_get(grr(rr)) | msk);
     true
 }
 
@@ -720,7 +720,7 @@ pub fn set_msk_arr(m: MMy, msk: u8, rr: RR) -> bool {
 /////ADD TESTS !
 /////need to be implemented (low consumption)
 pub fn stop(m: MMy) -> bool {
-    m.set(DIV, 0);
+    m.nu_set(DIV, 0);
     true
 }
 
