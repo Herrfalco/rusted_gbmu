@@ -8,6 +8,8 @@ use minifb::{Window, WindowOptions};
 const LCD_W: usize = 160;
 const LCD_H: usize = 144;
 
+const ZOOM: usize = 6;
+
 const OAM_T: usize = 80;
 const DRAW_T: usize = 172;
 const H_BLK_T: usize = 204;
@@ -48,8 +50,8 @@ impl Display {
             buff: vec![COLORS[0]; LCD_W * LCD_H],
             win: Window::new(
                 "Falco's GBMU",
-                LCD_W * 4,
-                LCD_H * 4,
+                LCD_W * ZOOM,
+                LCD_H * ZOOM,
                 WindowOptions::default(),
             )
             .unwrap_or_else(|_| fatal_err("Can't open game window", 10)),

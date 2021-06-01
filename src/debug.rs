@@ -3,7 +3,7 @@ use crate::ops::ops::*;
 use crate::reg::{api::*, *};
 use crate::utils::*;
 use lazy_regex::regex;
-use minifb::{Window, WindowOptions};
+use minifb::{Key, Window, WindowOptions};
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
 use regex::Regex;
@@ -335,6 +335,12 @@ impl<'a> Debugger {
             if let Some(vram) = &mut self.vram {
                 if !vram.update(m, false) {
                     self.vram = None;
+                }
+            }
+            if let Some(keys) = &m.inputs.keys {
+                if keys.contains(&Key::F12) {
+                    m.inputs.keys = None;
+                    self.sbys = true;
                 }
             }
             if self.sbys || (self.brks.contains(&grr(&r.pc)) && self.n_times == 0) {

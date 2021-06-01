@@ -20,7 +20,7 @@ use std::path::Path;
 use timer::*;
 use utils::*;
 
-const DEBUG: bool = false;
+const DEBUG: bool = true;
 
 fn read_opcode(mem: My, pc: RR) -> (u8, u8) {
     (mem.su_get(grr(pc)), mem.su_get(grr(pc).wrapping_add(1)))
