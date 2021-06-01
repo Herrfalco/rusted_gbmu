@@ -4,6 +4,7 @@ mod input;
 mod mem;
 mod ops;
 mod reg;
+mod sprite;
 mod timer;
 mod utils;
 

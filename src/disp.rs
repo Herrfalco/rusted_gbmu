@@ -1,6 +1,7 @@
 use crate::input::*;
 use crate::mem::*;
 use crate::reg::api::*;
+use crate::sprite::*;
 use crate::utils::*;
 use minifb::{Window, WindowOptions};
 
@@ -11,6 +12,8 @@ const OAM_T: usize = 80;
 const DRAW_T: usize = 172;
 const H_BLK_T: usize = 204;
 const V_BLK_T: usize = 456;
+
+const OFF_T: usize = 70224;
 
 enum State {
     Oam,
@@ -23,64 +26,13 @@ enum State {
 use std::time::Instant;
 */
 
-struct Sprite {
-    pos: (isize, isize),
-    tile: u16,
-    under: bool,
-    flip: (bool, bool),
-    pal: u16,
-}
-
-impl Sprite {
-    fn new(m: My, id: usize) -> Sprite {
-        let addr: u16 = 0xfe00 | id as u16 * 4;
-        let attr = m.su_get(addr + 3) & 0xf0;
-
-        Sprite {
-            pos: (
-                m.su_get(addr + 1) as isize - 8,
-                m.su_get(addr) as isize - 16,
-            ),
-            tile: 0x8000 | m.su_get(addr + 2) as u16 * 16,
-            under: attr & 0x80 != 0,
-            flip: (attr & 0x20 != 0, attr & 0x40 != 0),
-            pal: if attr & 0x10 != 0 { OBP1 } else { OBP0 },
-        }
-    }
-
-    fn get_pix(&self, m: My, x: usize) -> Option<u8> {
-        if !(self.pos.0..(self.pos.0 + 8)).contains(&(x as isize)) {
-            return None;
-        }
-
-        let (spr_x, spr_y) = (
-            (x as isize - self.pos.0) as usize,
-            (m.su_get(LY) as isize - self.pos.1) as usize,
-        );
-        let lst_l = if m.su_get(LCDC) & 0x4 != 0 { 15 } else { 7 };
-        let byte = self.tile
-            + (if self.flip.1 {
-                ((spr_y as isize - lst_l) * -1) as usize
-            } else {
-                spr_y
-            } * 2) as u16;
-        let i = if self.flip.0 {
-            spr_x
-        } else {
-            ((spr_x as isize - 7) * -1) as usize
-        };
-        let bit1 = (m.su_get(byte as u16) >> i) & 0x1;
-        let bit2 = ((m.su_get(byte as u16 + 1) >> i) & 0x1) << 1;
-        Some(bit1 | bit2)
-    }
-}
-
 pub struct Display {
     cycles: usize,
     state: State,
     buff: Vec<u32>,
     win: Window,
     sprites: Vec<Sprite>,
+    off_cy: usize,
     /*
     time: Instant,
     time_v: Vec<u128>,
@@ -101,6 +53,7 @@ impl Display {
             )
             .unwrap_or_else(|_| fatal_err("Can't open game window", 10)),
             sprites: Vec::new(),
+            off_cy: OFF_T,
             /*
             time: Instant::now(),
             time_v: Vec::new(),
@@ -124,24 +77,6 @@ impl Display {
         self.win
             .update_with_buffer(&self.buff, LCD_W, LCD_H)
             .unwrap();
-    }
-
-    fn update_spr(&mut self, m: My) {
-        let mut spr: Sprite;
-        let spr_h = if m.su_get(LCDC) & 0x4 != 0 { 16 } else { 8 };
-
-        self.sprites.clear();
-        for i in 0..40 {
-            spr = Sprite::new(m, i);
-            if m.su_get(LY) as isize >= spr.pos.1 && (m.su_get(LY) as isize) < spr.pos.1 + spr_h {
-                self.sprites.push(spr);
-            }
-            if self.sprites.len() == 10 {
-                break;
-            }
-        }
-        self.sprites
-            .sort_by(|a, b| a.pos.0.partial_cmp(&b.pos.0).unwrap());
     }
 
     fn update_ly(m: MMy) {
@@ -211,12 +146,16 @@ impl Display {
     }
 
     pub fn update(&mut self, m: MMy, cy: usize) {
+        if m.su_get(LCDC) & 0x80 == 0 {
+            self.lcd_off(m, cy);
+            return;
+        }
         if cy >= self.cycles {
             let rem = cy - self.cycles;
 
             match self.state {
                 State::Oam => {
-                    self.update_spr(m);
+                    Sprite::update(&mut self.sprites, m);
                     self.state = Display::update_stat(m, State::Draw);
                     self.cycles = DRAW_T - rem;
                 }
@@ -278,6 +217,21 @@ impl Display {
             }
         } else {
             self.cycles -= cy;
+        }
+    }
+
+    fn lcd_off(&mut self, m: MMy, cy: usize) {
+        if cy >= self.off_cy {
+            self.win
+                .update_with_buffer(&vec![COLORS[0]; LCD_W * LCD_H], LCD_W, LCD_H)
+                .unwrap();
+            if !self.win.is_open() {
+                quit::with_code(0);
+            }
+            Inputs::up_keys(m, &self.win);
+            self.off_cy = OFF_T - (cy - self.off_cy);
+        } else {
+            self.off_cy -= cy;
         }
     }
 }

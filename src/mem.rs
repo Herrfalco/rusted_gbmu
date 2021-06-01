@@ -36,11 +36,6 @@ impl Mem {
     }
 
     fn get(&self, addr: u16, su: bool) -> u8 {
-        /*
-        if addr == P1 {
-            println!("{:08b}", self.data[addr as usize]);
-        }
-        */
         if !su {
             match addr {
                 P1 => return Inputs::get_p1(self),
