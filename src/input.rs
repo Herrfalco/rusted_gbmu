@@ -13,7 +13,7 @@ impl Inputs {
         Inputs {
             keys: None,
             acts: vec![Key::D, Key::F, Key::A, Key::S],
-            dirs: vec![Key::L, Key::H, Key::K, Key::J],
+            dirs: vec![Key::Right, Key::Left, Key::Up, Key::Down],
         }
     }
 
@@ -60,10 +60,10 @@ impl Inputs {
                         for k in keys {
                             if m.inputs.dirs.contains(k) {
                                 result &= match k {
-                                    Key::L => !0x1,
-                                    Key::H => !0x2,
-                                    Key::K => !0x4,
-                                    Key::J => !0x8,
+                                    Key::Right => !0x1,
+                                    Key::Left => !0x2,
+                                    Key::Up => !0x4,
+                                    Key::Down => !0x8,
                                     _ => !0x0,
                                 }
                             }

@@ -24,6 +24,12 @@ enum State {
     VBlank,
 }
 
+enum WinY {
+    Inc,
+    Res,
+    Ign,
+}
+
 /*
 use std::time::Instant;
 */
@@ -36,6 +42,7 @@ pub struct Display {
     sprites: Vec<Sprite>,
     off_cy: usize,
     win_y: usize,
+    was_off: bool,
     /*
     time: Instant,
     time_v: Vec<u128>,
@@ -58,6 +65,7 @@ impl Display {
             sprites: Vec::new(),
             off_cy: OFF_T,
             win_y: 0,
+            was_off: false,
             /*
             time: Instant::now(),
             time_v: Vec::new(),
@@ -83,13 +91,19 @@ impl Display {
             .unwrap();
     }
 
-    fn update_ly(&mut self, m: MMy, res_win_y: bool) {
+    fn update_ly(&mut self, m: MMy, wflag: WinY) {
         let lcdc = m.su_get(LCDC);
-        if res_win_y {
-            self.win_y = 0;
-        } else if lcdc & 0x1 != 0 && lcdc & 0x20 != 0 {
-            self.win_y += 1;
+
+        match wflag {
+            WinY::Res => self.win_y = 0,
+            WinY::Inc => {
+                if lcdc & 0x1 != 0 && lcdc & 0x20 != 0 && m.su_get(LY) >= m.su_get(WY) {
+                    self.win_y += 1;
+                }
+            }
+            _ => (),
         }
+
         m.su_set(LY, (m.su_get(LY) + 1) % 154);
         if m.su_get(LY) == m.su_get(LYC) {
             m.su_set(STAT, m.su_get(STAT) | 0x4);
@@ -206,6 +220,7 @@ impl Display {
     pub fn update(&mut self, m: MMy, cy: usize) {
         if m.su_get(LCDC) & 0x80 == 0 {
             self.lcd_off(m, cy);
+            self.was_off = true;
             return;
         }
         if cy >= self.cycles {
@@ -233,7 +248,7 @@ impl Display {
                         self.state = Display::update_stat(m, State::Oam);
                         self.cycles = OAM_T - rem;
                     }
-                    self.update_ly(m, false);
+                    self.update_ly(m, WinY::Inc);
                 }
                 State::VBlank => {
                     if m.su_get(LY) == 153 {
@@ -249,18 +264,22 @@ impl Display {
                         }
                         self.time = Instant::now();
                         */
-                        self.win
-                            .update_with_buffer(&self.buff, LCD_W, LCD_H)
-                            .unwrap();
+                        if !self.was_off {
+                            self.win
+                                .update_with_buffer(&self.buff, LCD_W, LCD_H)
+                                .unwrap();
+                        } else {
+                            self.was_off = false;
+                        }
                         if !self.win.is_open() {
                             quit::with_code(0);
                         }
                         Inputs::up_keys(m, &self.win);
-                        self.update_ly(m, true);
+                        self.update_ly(m, WinY::Res);
                         self.state = Display::update_stat(m, State::Oam);
                         self.cycles = OAM_T - rem;
                     } else {
-                        self.update_ly(m, false);
+                        self.update_ly(m, WinY::Ign);
                         self.cycles = V_BLK_T - rem;
                     }
                 }
