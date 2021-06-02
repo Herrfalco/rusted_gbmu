@@ -1,5 +1,6 @@
 mod debug;
 mod disp;
+mod header;
 mod input;
 mod mem;
 mod ops;
@@ -10,6 +11,7 @@ mod utils;
 
 use debug::*;
 use disp::*;
+use header::*;
 use mem::*;
 use ops::imp::dec_rr;
 use ops::imp::rst;
@@ -58,6 +60,7 @@ fn main() {
     let mut reset = false;
     let mut dbg = Debugger::new(DEBUG);
     let mut disp = Display::new();
+    let mut header: Header;
 
     let args: Vec<String> = env::args().skip(1).collect();
     if args.len() != 1 {
@@ -79,6 +82,11 @@ fn main() {
                 vram.update(&mut mem, true);
             }
             disp.reset();
+        } else {
+            header = Header::new(&mem.data);
+            if DEBUG {
+                println!("{}", header);
+            }
         }
 
         let mut regs = Regs::new();

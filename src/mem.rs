@@ -7,7 +7,7 @@ use std::path::Path;
 pub const MEM_SZ: usize = 0x10000;
 
 pub struct Mem {
-    data: Vec<u8>,
+    pub data: Vec<u8>,
     pub inputs: Inputs,
 }
 
