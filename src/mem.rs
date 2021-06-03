@@ -1,6 +1,7 @@
 use crate::input::*;
 use crate::mbc::*;
 use crate::reg::api::*;
+use crate::utils::*;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
@@ -10,16 +11,27 @@ pub const MEM_SZ: usize = 0x10000;
 pub struct Mem {
     pub data: Vec<u8>,
     pub inputs: Inputs,
-    mbc: Box<dyn MBC>,
+    mbc: Option<Box<dyn MBC>>,
 }
 
 impl Mem {
-    pub fn new() -> Mem {
-        Mem {
+    pub fn new(path: &str) -> Mem {
+        let mut result = Mem {
             data: vec![0; MEM_SZ],
             inputs: Inputs::new(),
-            mbc: Box::new(MBC0()),
+            mbc: None,
+        };
+        if let Err(msg) = result.load_rom(0x8000, Path::new(path)) {
+            fatal_err(msg, 2);
         }
+        if let Err(_) = result.load_rom(0x100, Path::new("../roms/DMG_ROM.gb")) {
+            fatal_err("Can't load bootrom", 11);
+        }
+        result.mbc = Some(match result.data[0x147] {
+            0x01 => MBC1::new(Path::new(path)),
+            _ => MBC0::new(Path::new(path)),
+        });
+        result
     }
 
     fn dma(&mut self, val: u8) {
@@ -39,7 +51,7 @@ impl Mem {
     }
 
     pub fn get(&self, addr: u16, su: bool) -> u8 {
-        if let Some(res) = self.mbc.get(addr, su) {
+        if let Some(res) = self.mbc.as_ref().unwrap().get(addr, su) {
             res
         } else {
             if !su {
@@ -65,7 +77,7 @@ impl Mem {
     }
 
     pub fn set(&mut self, addr: u16, val: u8, su: bool) {
-        if let Some(_) = self.mbc.set(addr, val, su) {
+        if let Some(_) = self.mbc.as_mut().unwrap().set(addr, val, su) {
         } else {
             let mut tmp = val;
 

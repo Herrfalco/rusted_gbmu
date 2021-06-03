@@ -23,7 +23,7 @@ use std::path::Path;
 use timer::*;
 use utils::*;
 
-const DEBUG: bool = true;
+const DEBUG: bool = false;
 
 fn read_opcode(mem: My, pc: RR) -> (u8, u8) {
     (mem.su_get(grr(pc)), mem.su_get(grr(pc).wrapping_add(1)))
@@ -69,13 +69,7 @@ fn main() {
     }
 
     loop {
-        let mut mem = Mem::new();
-        if let Err(msg) = mem.load_rom(0x8000, Path::new(&args[0])) {
-            fatal_err(msg, 2);
-        }
-        if let Err(_) = mem.load_rom(0x100, Path::new("../roms/DMG_ROM.gb")) {
-            fatal_err("Can't load bootrom", 11);
-        }
+        let mut mem = Mem::new(&args[0]);
         mem.init_spe_reg();
 
         if reset {
