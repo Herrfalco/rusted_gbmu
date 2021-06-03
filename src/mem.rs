@@ -1,4 +1,5 @@
 use crate::input::*;
+use crate::mbc::*;
 use crate::reg::api::*;
 use std::fs::File;
 use std::io::Read;
@@ -9,6 +10,7 @@ pub const MEM_SZ: usize = 0x10000;
 pub struct Mem {
     pub data: Vec<u8>,
     pub inputs: Inputs,
+    mbc: Box<dyn MBC>,
 }
 
 impl Mem {
@@ -16,6 +18,7 @@ impl Mem {
         Mem {
             data: vec![0; MEM_SZ],
             inputs: Inputs::new(),
+            mbc: Box::new(MBC0()),
         }
     }
 
@@ -35,18 +38,22 @@ impl Mem {
         self.get(addr, true)
     }
 
-    fn get(&self, addr: u16, su: bool) -> u8 {
-        if !su {
-            match addr {
-                P1 => return Inputs::get_p1(self),
-                0xfe00..=0xfeff => match self.data[STAT as usize] & 0x3 {
-                    2 | 3 => return 0xff,
+    pub fn get(&self, addr: u16, su: bool) -> u8 {
+        if let Some(res) = self.mbc.get(addr, su) {
+            res
+        } else {
+            if !su {
+                match addr {
+                    P1 => return Inputs::get_p1(self),
+                    0xfe00..=0xfeff => match self.data[STAT as usize] & 0x3 {
+                        2 | 3 => return 0xff,
+                        _ => (),
+                    },
                     _ => (),
-                },
-                _ => (),
+                }
             }
+            self.data[addr as usize]
         }
-        return self.data[addr as usize];
     }
 
     pub fn nu_set(&mut self, addr: u16, val: u8) {
@@ -57,21 +64,24 @@ impl Mem {
         self.set(addr, val, true);
     }
 
-    fn set(&mut self, addr: u16, val: u8, su: bool) {
-        let mut tmp = val;
+    pub fn set(&mut self, addr: u16, val: u8, su: bool) {
+        if let Some(_) = self.mbc.set(addr, val, su) {
+        } else {
+            let mut tmp = val;
 
-        if !su {
-            match addr {
-                DIV => tmp = 0,
-                DMA => return self.dma(val),
-                0xfe00..=0xfe9f => match self.data[STAT as usize] & 0x3 {
-                    2 | 3 => return,
+            if !su {
+                match addr {
+                    DIV => tmp = 0,
+                    DMA => return self.dma(val),
+                    0xfe00..=0xfe9f => match self.data[STAT as usize] & 0x3 {
+                        2 | 3 => return,
+                        _ => (),
+                    },
                     _ => (),
-                },
-                _ => (),
+                }
             }
+            self.data[addr as usize] = tmp;
         }
-        self.data[addr as usize] = tmp;
     }
 
     pub fn load_rom(&mut self, len: usize, path: &Path) -> Result<(), &str> {

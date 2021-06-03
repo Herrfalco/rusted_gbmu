@@ -2,6 +2,7 @@ mod debug;
 mod disp;
 mod header;
 mod input;
+mod mbc;
 mod mem;
 mod ops;
 mod reg;
