@@ -88,11 +88,18 @@ pub fn pop_rr_arr(m: My, rr1: MRR, rr2: MRR) -> bool {
     true
 }
 
-pub fn push_arr_rr(m: MMy, rr1: MRR, rr2: RR) -> bool {
+pub fn push_arr_rr(m: MMy, rr1: MRR, rr2: RR, af: bool) -> bool {
     srr(rr1, grr(rr1).wrapping_sub(1));
     m.nu_set(grr(rr1), gr((rr2, U)));
     srr(rr1, grr(rr1).wrapping_sub(1));
-    m.nu_set(grr(rr1), gr((rr2, D)));
+    m.nu_set(
+        grr(rr1),
+        if af {
+            gr((rr2, D)) & 0xf0
+        } else {
+            gr((rr2, D))
+        },
+    );
     true
 }
 
@@ -303,6 +310,9 @@ pub fn daa(af: MRR) -> bool {
             sr((af, U), tmp.wrapping_add(0x6));
         }
     }
+    tmp = gr((af, U));
+    sf((af, Z), tmp == 0);
+    sf((af, H), false);
     true
 }
 
@@ -326,7 +336,7 @@ pub fn jr_cc_sn(pc: MRR, cc: bool, sn: i8) -> bool {
 
 pub fn call_cc_nn(m: MMy, sp: MRR, pc: MRR, cc: bool, nn: u16) -> bool {
     if cc {
-        push_arr_rr(m, sp, pc);
+        push_arr_rr(m, sp, pc, false);
         srr(pc, nn);
         return true;
     }
@@ -348,7 +358,7 @@ pub fn reti(m: MMy, ime: MRR, pc: MRR, sp: MRR) -> bool {
 }
 
 pub fn rst(m: MMy, sp: MRR, pc: MRR, nn: u16) -> bool {
-    push_arr_rr(m, sp, pc);
+    push_arr_rr(m, sp, pc, false);
     srr(pc, nn);
     true
 }
@@ -717,7 +727,6 @@ pub fn set_msk_arr(m: MMy, msk: u8, rr: RR) -> bool {
 
 ////////////////////// MISC/CONTROL ///////////////////////
 
-/////ADD TESTS !
 /////need to be implemented (low consumption)
 pub fn stop(m: MMy) -> bool {
     m.nu_set(DIV, 0);
@@ -734,7 +743,6 @@ pub fn di(ime: MRR) -> bool {
     true
 }
 
-/////need to be dec in main loop
 pub fn ei(ime: MRR) -> bool {
     srr(ime, 3);
     true

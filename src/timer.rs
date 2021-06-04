@@ -51,7 +51,7 @@ impl Timer {
             if cy >= self.tima_cy {
                 let mut tmp = m.su_get(TIMA).wrapping_add(1);
 
-                self.tima_cy = self.tima_cy_sav - (cy - self.tima_cy);
+                self.tima_cy = self.tima_cy_sav - ((cy - self.tima_cy) % self.tima_cy_sav);
                 if tmp == 0 {
                     tmp = m.su_get(TMA);
                     m.su_set(IF, m.su_get(IF) | 0x4);

@@ -230,7 +230,13 @@ impl Header {
         };
         match result.cgb {
             CGB::Cgb | CGB::CgbOnly => {
-                result.title = String::from(&result.title[..result.title.len() - 4]);
+                result.title = String::from(
+                    &result.title[..if result.title.len() > 4 {
+                        result.title.len() - 4
+                    } else {
+                        0
+                    }],
+                );
             }
             _ => result.manu = None,
         }

@@ -3,7 +3,7 @@ use crate::reg::*;
 
 #[test]
 fn ld_8() {
-    let mut mem = Mem::new();
+    let mut mem = Mem::new("");
     let mut af = Reg::new();
     let mut hl = Reg::new();
     let mut bc = Reg::new();
@@ -49,7 +49,7 @@ fn ld_8() {
 
 #[test]
 fn ld_16() {
-    let mut mem = Mem::new();
+    let mut mem = Mem::new("");
     let mut af = Reg::new();
     let mut hl = Reg::new();
     let mut sp = Reg::new();
@@ -67,7 +67,7 @@ fn ld_16() {
     ld_rr_nn(&mut sp, grr(&hl));
     ld_rr_rrpsn(&mut bc, &mut af, &sp, -2);
     assert_eq!(grr(&af), 0x1120);
-    push_arr_rr(&mut mem, &mut af, &mut hl);
+    push_arr_rr(&mut mem, &mut af, &mut hl, false);
     assert_eq!(grr(&af), 0x111e);
     assert_eq!(mem.su_get(0x111f), 0x11);
     assert_eq!(mem.su_get(0x111e), 0x22);
@@ -137,7 +137,7 @@ fn acc_8() {
 
 #[test]
 fn misc_8() {
-    let mut mem = Mem::new();
+    let mut mem = Mem::new("");
     let mut af = Reg::new();
     let mut bc = Reg::new();
 
@@ -210,7 +210,7 @@ fn daa_8() {
 
 #[test]
 fn jp_call() {
-    let mut mem = Mem::new();
+    let mut mem = Mem::new("");
     let mut sp = Reg::new();
     let mut pc = Reg::new();
     let mut ime = Reg::new();
@@ -311,7 +311,7 @@ fn rot_sh() {
 
 #[test]
 fn cb_rot() {
-    let mut mem = Mem::new();
+    let mut mem = Mem::new("");
     let mut hl = Reg::new();
     let mut af = Reg::new();
     let mut af2 = Reg::new();
@@ -365,7 +365,7 @@ fn cb_rot() {
 
 #[test]
 fn sh_bit() {
-    let mut mem = Mem::new();
+    let mut mem = Mem::new("");
     let mut hl = Reg::new();
     let mut af = Reg::new();
     let mut af2 = Reg::new();

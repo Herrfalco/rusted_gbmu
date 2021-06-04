@@ -11,7 +11,7 @@ pub const MEM_SZ: usize = 0x10000;
 pub struct Mem {
     pub data: Vec<u8>,
     pub inputs: Inputs,
-    mbc: Option<Box<dyn MBC>>,
+    mbc: Box<dyn MBC>,
 }
 
 impl Mem {
@@ -19,18 +19,20 @@ impl Mem {
         let mut result = Mem {
             data: vec![0; MEM_SZ],
             inputs: Inputs::new(),
-            mbc: None,
+            mbc: MBC0::new(Path::new("")),
         };
-        if let Err(msg) = result.load_rom(0x8000, Path::new(path)) {
-            fatal_err(msg, 2);
+        if path != "" {
+            if let Err(msg) = result.load_rom(0x8000, Path::new(path)) {
+                fatal_err(msg, 2);
+            }
+            if let Err(_) = result.load_rom(0x100, Path::new("../roms/DMG_ROM.gb")) {
+                fatal_err("Can't load bootrom", 11);
+            }
+            result.mbc = match result.data[0x147] {
+                0x01 => MBC1::new(Path::new(path)),
+                _ => MBC0::new(Path::new(path)),
+            };
         }
-        if let Err(_) = result.load_rom(0x100, Path::new("../roms/DMG_ROM.gb")) {
-            fatal_err("Can't load bootrom", 11);
-        }
-        result.mbc = Some(match result.data[0x147] {
-            0x01 => MBC1::new(Path::new(path)),
-            _ => MBC0::new(Path::new(path)),
-        });
         result
     }
 
@@ -51,7 +53,7 @@ impl Mem {
     }
 
     pub fn get(&self, addr: u16, su: bool) -> u8 {
-        if let Some(res) = self.mbc.as_ref().unwrap().get(addr, su) {
+        if let Some(res) = self.mbc.get(addr, su) {
             res
         } else {
             if !su {
@@ -77,7 +79,7 @@ impl Mem {
     }
 
     pub fn set(&mut self, addr: u16, val: u8, su: bool) {
-        if let Some(_) = self.mbc.as_mut().unwrap().set(addr, val, su) {
+        if let Some(_) = self.mbc.set(addr, val, su) {
         } else {
             let mut tmp = val;
 
@@ -153,7 +155,7 @@ mod tests {
 
     #[test]
     fn init() {
-        let mem = Mem::new();
+        let mem = Mem::new("");
 
         assert_eq!(mem.data.len(), 0x10000);
         for byte in mem.data {
@@ -163,7 +165,7 @@ mod tests {
 
     #[test]
     fn access() {
-        let mut mem = Mem::new();
+        let mut mem = Mem::new("");
 
         assert_eq!(mem.su_get(0), 0);
         assert_eq!(mem.su_get(0xffff), 0);
@@ -179,7 +181,7 @@ mod tests {
 
     #[test]
     fn rom_load() {
-        let mut mem = Mem::new();
+        let mut mem = Mem::new("");
         let first_bytes = [
             0xc3, 0x8b, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0xc3, 0x8b, 0x02, 0xff,
         ];

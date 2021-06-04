@@ -362,16 +362,16 @@ impl Ops {
         }));
 
         ops[0xc5] = Some(Op::new("PUSH BC", 1, (16, 0), |_r, _m, _p| -> bool {
-            push_arr_rr(_m, &mut _r.sp, &mut _r.bc)
+            push_arr_rr(_m, &mut _r.sp, &_r.bc, false)
         }));
         ops[0xd5] = Some(Op::new("PUSH DE", 1, (16, 0), |_r, _m, _p| -> bool {
-            push_arr_rr(_m, &mut _r.sp, &mut _r.de)
+            push_arr_rr(_m, &mut _r.sp, &_r.de, false)
         }));
         ops[0xe5] = Some(Op::new("PUSH HL", 1, (16, 0), |_r, _m, _p| -> bool {
-            push_arr_rr(_m, &mut _r.sp, &mut _r.hl)
+            push_arr_rr(_m, &mut _r.sp, &_r.hl, false)
         }));
         ops[0xf5] = Some(Op::new("PUSH AF", 1, (16, 0), |_r, _m, _p| -> bool {
-            push_arr_rr(_m, &mut _r.sp, &mut _r.af)
+            push_arr_rr(_m, &mut _r.sp, &_r.af, true)
         }));
 
         ////////////////////// 8 BITS ARITHMETIC ///////////////////////
@@ -1667,7 +1667,7 @@ mod tests {
 
     #[test]
     fn system() {
-        let mut mem = Mem::new();
+        let mut mem = Mem::new("");
         let mut regs = Regs::new();
 
         let ops = vec![

@@ -6,6 +6,7 @@ pub struct Inputs {
     pub keys: Option<Vec<Key>>,
     acts: Vec<Key>,
     dirs: Vec<Key>,
+    brk: bool,
 }
 
 impl Inputs {
@@ -13,7 +14,8 @@ impl Inputs {
         Inputs {
             keys: None,
             acts: vec![Key::D, Key::F, Key::A, Key::S],
-            dirs: vec![Key::Right, Key::Left, Key::Up, Key::Down],
+            dirs: vec![Key::L, Key::J, Key::I, Key::K],
+            brk: false,
         }
     }
 
@@ -28,6 +30,9 @@ impl Inputs {
                             m.su_set(IF, m.su_get(IF) & 0x10);
                         }
                     }
+                    if o_keys.contains(&Key::F12) {
+                        m.inputs.brk = true;
+                    }
                 } else {
                     m.su_set(IF, m.su_get(IF) & 0x10);
                 }
@@ -40,7 +45,14 @@ impl Inputs {
         let saved_p1 = m.su_get(P1);
         let mut result = (saved_p1 & 0x30) | !0x30;
 
-        if let Some(keys) = &m.inputs.keys {
+        if let Some(keys) = &mut m.inputs.keys.clone() {
+            if keys.contains(&Key::Right) && keys.contains(&Key::Left) {
+                keys.retain(|&x| x != Key::Right && x != Key::Left);
+            }
+            if keys.contains(&Key::Up) && keys.contains(&Key::Down) {
+                keys.retain(|&x| x != Key::Up && x != Key::Down);
+            }
+
             if keys.len() != 0 {
                 match result & 0x30 {
                     0x10 => {
@@ -60,10 +72,10 @@ impl Inputs {
                         for k in keys {
                             if m.inputs.dirs.contains(k) {
                                 result &= match k {
-                                    Key::Right => !0x1,
-                                    Key::Left => !0x2,
-                                    Key::Up => !0x4,
-                                    Key::Down => !0x8,
+                                    Key::L => !0x1,
+                                    Key::J => !0x2,
+                                    Key::I => !0x4,
+                                    Key::K => !0x8,
                                     _ => !0x0,
                                 }
                             }
