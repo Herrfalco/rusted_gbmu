@@ -129,9 +129,9 @@ impl Display {
         );
         if m.su_get(STAT)
             & match st {
-                State::Oam => 0x10,
-                State::HBlank => 0x4,
-                State::VBlank => 0x8,
+                State::Oam => 0x20,
+                State::HBlank => 0x8,
+                State::VBlank => 0x10,
                 _ => 0x0,
             }
             != 0
