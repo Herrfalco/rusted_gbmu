@@ -71,12 +71,12 @@ impl Regs {
         }
     }
 
-    pub fn init(&mut self) {
+    pub fn init(&mut self, debug: bool) {
         self.af.set_16(0x01b0);
         self.bc.set_16(0x0013);
         self.de.set_16(0x00d8);
         self.hl.set_16(0x014d);
-        self.pc.set_16(0x0000);
+        self.pc.set_16(if debug { 0x100 } else { 0x0 });
         self.sp.set_16(0xfffe);
     }
 

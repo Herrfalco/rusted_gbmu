@@ -85,7 +85,7 @@ fn main() {
         }
 
         let mut regs = Regs::new();
-        regs.init();
+        regs.init(DEBUG);
 
         let ops = Ops::new();
         let mut timer = Timer::new(&mut mem);

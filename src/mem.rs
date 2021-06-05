@@ -29,7 +29,7 @@ impl Mem {
                 fatal_err("Can't load bootrom", 11);
             }
             result.mbc = match result.data[0x147] {
-                0x01 => MBC1::new(Path::new(path)),
+                0x01 | 0x02 | 0x03 => MBC1::new(Path::new(path)),
                 _ => MBC0::new(Path::new(path)),
             };
         }
