@@ -71,6 +71,12 @@ impl Display {
             time_v: Vec::new(),
             */
         };
+        //slow mode
+        /*
+        result
+            .win
+            .limit_update_rate(Some(std::time::Duration::from_millis(50)));
+        */
         result
             .win
             .limit_update_rate(Some(std::time::Duration::from_millis(17)));
@@ -110,7 +116,7 @@ impl Display {
             if m.su_get(STAT) & 0x40 != 0 {
                 m.su_set(IF, m.su_get(IF) | 0x2);
             }
-        } else if m.su_get(STAT) & 0x4 != 0 {
+        } else {
             m.su_set(STAT, m.su_get(STAT) & !0x4);
         }
     }

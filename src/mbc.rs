@@ -1,3 +1,4 @@
+use crate::header::*;
 use crate::utils::*;
 use std::fs::File;
 use std::io::Read;
@@ -28,10 +29,10 @@ impl MBC for MBC0 {
 }
 
 pub struct MBC1 {
-    cart: Vec<u8>,
+    rom: Vec<u8>,
     rom_sz: usize,
-    ram_sz: usize,
     rom_nb: usize,
+    ram: Vec<u8>,
     ram_nb: usize,
     ram_en: bool,
 }
@@ -39,34 +40,32 @@ pub struct MBC1 {
 impl MBC for MBC1 {
     fn new(path: &Path) -> Box<Self> {
         let mut result = Box::new(MBC1 {
-            cart: vec![],
+            rom: vec![],
             rom_sz: 0,
-            ram_sz: 0,
             rom_nb: 0x01,
+            ram: vec![],
             ram_nb: 0x0,
             ram_en: false,
         });
         let mut file = File::open(path).unwrap_or_else(|_| fatal_err("Can't open rom", 99));
 
-        file.read_to_end(&mut result.cart)
+        file.read_to_end(&mut result.rom)
             .unwrap_or_else(|_| fatal_err("Can't read from rom", 102));
-        result.rom_sz = result.cart[0x148] as usize;
-        result.ram_sz = result.cart[0x149] as usize;
-        println!(">>>{}", result.cart.len());
+        result.rom_sz = result.rom[0x148] as usize;
+        result.ram = vec![0; RAM_SZ[result.rom[0x149] as usize] / 8 * 0x2000];
         result
     }
 
     fn get(&self, addr: u16, su: bool) -> Option<u8> {
         match addr {
             0x4000..=0x7fff => {
-                return Some(self.cart[addr as usize - 0x4000 + self.rom_nb * 0x4000]);
+                return Some(self.rom[addr as usize - 0x4000 + self.rom_nb * 0x4000]);
             }
             0xa000..=0xbfff => {
                 return if !self.ram_en {
                     None
                 } else {
-                    //need to split rom and ram
-                    Some(self.cart[addr as usize - 0xa000 + self.ram_nb * 0x2000])
+                    Some(self.ram[addr as usize - 0xa000 + self.ram_nb * 0x2000])
                 };
             }
             _ => None,
@@ -86,6 +85,9 @@ impl MBC for MBC1 {
             }
             0x4000..=0x5fff => {
                 self.ram_nb = val as usize & 0x3;
+            }
+            0xa000..=0xbfff => {
+                self.ram[addr as usize - 0xa000 + self.ram_nb * 0x2000] = val;
             }
             _ => return None,
         }

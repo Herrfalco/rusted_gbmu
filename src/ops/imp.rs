@@ -727,13 +727,11 @@ pub fn set_msk_arr(m: MMy, msk: u8, rr: RR) -> bool {
 
 ////////////////////// MISC/CONTROL ///////////////////////
 
-/////need to be implemented (low consumption)
 pub fn stop(m: MMy) -> bool {
     m.nu_set(DIV, 0);
     true
 }
 
-/////need to be implemented (low consumption)
 pub fn halt() -> bool {
     true
 }

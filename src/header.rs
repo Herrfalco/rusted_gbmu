@@ -168,7 +168,7 @@ lazy_static! {
     .iter()
     .cloned()
     .collect();
-    static ref RAM_SZ: Vec<u8> = vec![0, 2, 8, 32, 128, 64,];
+    pub static ref RAM_SZ: Vec<usize> = vec![0, 2, 8, 32, 128, 64,];
 }
 
 enum LIC {
