@@ -14,6 +14,7 @@ const OAM_T: usize = 80;
 const DRAW_T: usize = 172;
 const H_BLK_T: usize = 204;
 const V_BLK_T: usize = 456;
+const LAST_L_T: usize = 4;
 
 const OFF_T: usize = 70224;
 
@@ -24,13 +25,11 @@ enum State {
     VBlank,
 }
 
-enum WinY {
+enum ModFlag {
     Inc,
     Res,
     Ign,
 }
-
-static mut counter: usize = 10;
 
 /*
 use std::time::Instant;
@@ -99,12 +98,12 @@ impl Display {
             .unwrap();
     }
 
-    fn update_ly(&mut self, m: MMy, wflag: WinY) {
+    fn update_ly(&mut self, m: MMy, wflag: ModFlag, lflag: ModFlag) {
         let lcdc = m.su_get(LCDC);
 
         match wflag {
-            WinY::Res => self.win_y = 0,
-            WinY::Inc => {
+            ModFlag::Res => self.win_y = 0,
+            ModFlag::Inc => {
                 if lcdc & 0x1 != 0 && lcdc & 0x20 != 0 && m.su_get(LY) >= m.su_get(WY) {
                     self.win_y += 1;
                 }
@@ -112,7 +111,11 @@ impl Display {
             _ => (),
         }
 
-        m.su_set(LY, (m.su_get(LY) + 1) % 154);
+        match lflag {
+            ModFlag::Res => m.su_set(LY, 0),
+            ModFlag::Inc => m.su_set(LY, m.su_get(LY) + 1),
+            _ => return,
+        }
         if m.su_get(LY) == m.su_get(LYC) {
             m.su_set(STAT, m.su_get(STAT) | 0x4);
             if m.su_get(STAT) & 0x40 != 0 {
@@ -256,39 +259,54 @@ impl Display {
                         self.state = Display::update_stat(m, State::Oam);
                         self.cycles = OAM_T - rem;
                     }
-                    self.update_ly(m, WinY::Inc);
+                    self.update_ly(m, ModFlag::Inc, ModFlag::Inc);
                 }
                 State::VBlank => {
-                    if m.su_get(LY) == 153 {
-                        /*
-                        let elap = self.time.elapsed();
-                        self.time_v.push(elap.as_millis());
-                        if self.time_v.len() == 100 {
-                            println!(
-                                "{}",
-                                1000. / (self.time_v.iter().sum::<u128>() as f32 / 100.)
-                            );
-                            self.time_v.clear();
+                    match m.su_get(LY) {
+                        0 => {
+                            /*
+                            let elap = self.time.elapsed();
+                            self.time_v.push(elap.as_millis());
+                            if self.time_v.len() == 100 {
+                                println!(
+                                    "{}",
+                                    1000. / (self.time_v.iter().sum::<u128>() as f32 / 100.)
+                                );
+                                self.time_v.clear();
+                            }
+                            self.time = Instant::now();
+                            */
+                            if !self.was_off {
+                                self.win
+                                    .update_with_buffer(&self.buff, LCD_W, LCD_H)
+                                    .unwrap();
+                            } else {
+                                self.was_off = false;
+                            }
+                            if !self.win.is_open() {
+                                quit::with_code(0);
+                            }
+                            Inputs::up_keys(m, &self.win);
+                            self.state = Display::update_stat(m, State::Oam);
+                            self.cycles = OAM_T - rem;
                         }
-                        self.time = Instant::now();
-                        */
-                        if !self.was_off {
-                            self.win
-                                .update_with_buffer(&self.buff, LCD_W, LCD_H)
-                                .unwrap();
-                        } else {
-                            self.was_off = false;
+                        152 => {
+                            self.update_ly(m, ModFlag::Ign, ModFlag::Inc);
+                            if rem >= LAST_L_T {
+                                self.update_ly(m, ModFlag::Res, ModFlag::Res);
+                                self.cycles = V_BLK_T - (rem - LAST_L_T);
+                            } else {
+                                self.cycles = LAST_L_T - rem;
+                            }
                         }
-                        if !self.win.is_open() {
-                            quit::with_code(0);
+                        153 => {
+                            self.update_ly(m, ModFlag::Res, ModFlag::Res);
+                            self.cycles = V_BLK_T - LAST_L_T - rem;
                         }
-                        Inputs::up_keys(m, &self.win);
-                        self.update_ly(m, WinY::Res);
-                        self.state = Display::update_stat(m, State::Oam);
-                        self.cycles = OAM_T - rem;
-                    } else {
-                        self.update_ly(m, WinY::Ign);
-                        self.cycles = V_BLK_T - rem;
+                        _ => {
+                            self.update_ly(m, ModFlag::Ign, ModFlag::Inc);
+                            self.cycles = V_BLK_T - rem;
+                        }
                     }
                 }
             }
