@@ -33,6 +33,7 @@ pub struct MBC1 {
     rom_sz: usize,
     rom_nb: usize,
     ram: Vec<u8>,
+    ram_sz: usize,
     ram_nb: usize,
     ram_en: bool,
 }
@@ -44,6 +45,7 @@ impl MBC for MBC1 {
             rom_sz: 0,
             rom_nb: 0x01,
             ram: vec![],
+            ram_sz: 0,
             ram_nb: 0x0,
             ram_en: false,
         });
@@ -52,7 +54,8 @@ impl MBC for MBC1 {
         file.read_to_end(&mut result.rom)
             .unwrap_or_else(|_| fatal_err("Can't read from rom", 102));
         result.rom_sz = result.rom[0x148] as usize;
-        result.ram = vec![0; RAM_SZ[result.rom[0x149] as usize] / 8 * 0x2000];
+        result.ram_sz = result.rom[0x149] as usize;
+        result.ram = vec![0; RAM_SZ[result.ram_sz] / 8 * 0x2000];
         result
     }
 
@@ -61,7 +64,7 @@ impl MBC for MBC1 {
             0x4000..=0x7fff => {
                 return Some(self.rom[addr as usize - 0x4000 + self.rom_nb * 0x4000]);
             }
-            0xa000..=0xbfff => {
+            0xa000..=0xbfff if self.ram_sz != 0 => {
                 return if !self.ram_en {
                     None
                 } else {
@@ -83,10 +86,10 @@ impl MBC for MBC1 {
                     self.rom_nb = 1;
                 }
             }
-            0x4000..=0x5fff => {
+            0x4000..=0x5fff if self.ram_sz != 0 => {
                 self.ram_nb = val as usize & 0x3;
             }
-            0xa000..=0xbfff => {
+            0xa000..=0xbfff if self.ram_sz != 0 => {
                 self.ram[addr as usize - 0xa000 + self.ram_nb * 0x2000] = val;
             }
             _ => return None,
