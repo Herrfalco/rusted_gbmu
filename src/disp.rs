@@ -30,6 +30,8 @@ enum WinY {
     Ign,
 }
 
+static mut counter: usize = 10;
+
 /*
 use std::time::Instant;
 */
@@ -149,11 +151,11 @@ impl Display {
 
     fn get_win_pix(&self, m: My, x: usize) -> Option<u8> {
         let lcdc = m.su_get(LCDC);
-        let (pos_x, pos_y) = (m.su_get(WX).wrapping_sub(7), m.su_get(WY));
-        if lcdc & 0x1 == 0 || lcdc & 0x20 == 0 || x < pos_x as usize || m.su_get(LY) < pos_y {
+        let (pos_x, pos_y): (isize, u8) = (m.su_get(WX) as isize - 7, m.su_get(WY));
+        if lcdc & 0x1 == 0 || lcdc & 0x20 == 0 || (x as isize) < pos_x || m.su_get(LY) < pos_y {
             return None;
         }
-        let (win_x, win_y) = (x - pos_x as usize, self.win_y);
+        let (win_x, win_y) = ((x as isize - pos_x) as usize, self.win_y);
 
         Some(self.get_pix(m, (win_x, win_y), false))
     }
