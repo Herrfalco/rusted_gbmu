@@ -143,6 +143,7 @@ impl fmt::Display for Regs {
     }
 }
 
+#[allow(dead_code)]
 pub mod api {
     use super::*;
 

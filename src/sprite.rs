@@ -19,7 +19,14 @@ impl Sprite {
                 m.su_get(addr + 1) as isize - 8,
                 m.su_get(addr) as isize - 16,
             ),
-            tile: 0x8000 | m.su_get(addr + 2) as u16 * 16,
+            tile: 0x8000
+                | (m.su_get(addr + 2)
+                    & if m.su_get(LCDC) & 0x4 != 0 {
+                        0xfe
+                    } else {
+                        0xff
+                    }) as u16
+                    * 16,
             under: attr & 0x80 != 0,
             flip: (attr & 0x20 != 0, attr & 0x40 != 0),
             pal: m.su_get(if attr & 0x10 != 0 { OBP1 } else { OBP0 }),

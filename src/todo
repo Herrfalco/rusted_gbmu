@@ -12,3 +12,4 @@ use return instead of quit
 static lazy regex ~
 
 help for param and debug
+day counter carry bit

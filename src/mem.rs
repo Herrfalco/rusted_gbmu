@@ -30,6 +30,9 @@ impl Mem {
             }
             result.mbc = match result.data[0x147] {
                 0x01 | 0x02 | 0x03 => MBC1::new(Path::new(path)),
+                0x05 | 0x06 => MBC2::new(Path::new(path)),
+                0x0f | 0x10 | 0x11 => MBC3::new(Path::new(path)),
+                0x19 | 0x1a | 0x1b | 0x1c | 0x1d | 0x1e => MBC5::new(Path::new(path)),
                 _ => MBC0::new(Path::new(path)),
             };
         }
@@ -53,7 +56,7 @@ impl Mem {
     }
 
     pub fn get(&self, addr: u16, su: bool) -> u8 {
-        if let Some(res) = self.mbc.get(addr, su) {
+        if let Some(res) = self.mbc.get(addr) {
             res
         } else {
             if !su {
@@ -79,7 +82,7 @@ impl Mem {
     }
 
     pub fn set(&mut self, addr: u16, val: u8, su: bool) {
-        if let Some(_) = self.mbc.set(addr, val, su) {
+        if let Some(_) = self.mbc.set(addr, val) {
         } else {
             let mut tmp = val;
 

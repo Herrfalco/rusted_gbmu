@@ -1,7 +1,7 @@
 use crate::mem::*;
 use crate::reg::api::*;
 
-const div_t: usize = 256;
+const DIV_T: usize = 256;
 
 pub struct Timer {
     div_cy: usize,
@@ -13,7 +13,7 @@ pub struct Timer {
 impl Timer {
     pub fn new(m: MMy) -> Timer {
         let mut result = Timer {
-            div_cy: div_t,
+            div_cy: DIV_T,
             tima_cy: 0xff,
             tima_cy_sav: 0xff,
             tac_sav: 0xff,
@@ -41,7 +41,7 @@ impl Timer {
 
     pub fn update(&mut self, m: MMy, cy: usize) {
         if cy >= self.div_cy {
-            self.div_cy = div_t - (cy - self.div_cy);
+            self.div_cy = DIV_T - (cy - self.div_cy);
             m.su_set(DIV, m.su_get(DIV).wrapping_add(1));
         } else {
             self.div_cy -= cy;
