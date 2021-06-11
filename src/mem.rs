@@ -42,7 +42,7 @@ impl Mem {
     fn dma(&mut self, val: u8) {
         let tmp = (val as u16) << 8;
 
-        for i in 0x0..0x9f {
+        for i in 0x0..=0x9f {
             self.su_set(0xfe00 | i, self.su_get(tmp | i));
         }
     }
