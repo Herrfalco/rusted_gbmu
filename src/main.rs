@@ -6,6 +6,7 @@ mod mbc;
 mod mem;
 mod ops;
 mod reg;
+mod sound;
 mod sprite;
 mod timer;
 mod utils;
@@ -18,6 +19,7 @@ use ops::imp::dec_rr;
 use ops::imp::rst;
 use ops::ops::*;
 use reg::{api::*, *};
+use sound::*;
 use std::env;
 use std::path::Path;
 use timer::*;
@@ -62,6 +64,7 @@ fn main() {
     let mut dbg = Debugger::new(DEBUG);
     let mut disp = Display::new();
     let mut header: Header;
+    let mut audio = Audio::new();
 
     let args: Vec<String> = env::args().skip(1).collect();
     if args.len() != 1 {
@@ -129,6 +132,7 @@ fn main() {
             }
             timer.update(&mut mem, cycles);
             disp.update(&mut mem, cycles);
+            audio.update(&mut mem);
         }
     }
 }
