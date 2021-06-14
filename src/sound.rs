@@ -4,10 +4,10 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use std::sync::{Arc, Mutex};
 
 const SAMPLE_RATE: u32 = 44100;
+const OSC_T: usize = 64;
 
 pub struct Audio {
     stream: cpal::Stream,
-    chunk: Vec<(f32, f32)>,
     sample_rate: u32,
     oscs: Arc<Mutex<Oscillators>>,
 }
@@ -53,13 +53,12 @@ impl Audio {
         Audio {
             stream,
             sample_rate: SAMPLE_RATE,
-            chunk: Vec::new(),
             oscs: oscs_cln,
         }
     }
 
-    pub fn update(&mut self, m: MMy) {
-        self.oscs.lock().unwrap().update(m);
+    pub fn update(&mut self, m: MMy, cy: usize) {
+        self.oscs.lock().unwrap().update(m, cy);
     }
 }
 
@@ -79,17 +78,17 @@ fn stream_thrd(out_buff: &mut [f32], oscs: &Arc<Mutex<Oscillators>>) {
 struct Oscillators {
     osc1: Square,
     osc2: Square,
-    osc3: Square,
-    cycle: usize,
+    osc3: Wave,
+    cy: usize,
 }
 
 impl Oscillators {
     fn new() -> Oscillators {
         Oscillators {
-            osc1: Square::new((0xff12, 0xff13)),
-            osc2: Square::new((0xff18, 0xff19)),
-            osc3: Square::new((0xff1d, 0xff1e)),
-            cycle: 0,
+            osc1: Square::new((0xff13, 0xff14), 0xff11, 0xff12),
+            osc2: Square::new((0xff18, 0xff19), 0xff16, 0xff17),
+            osc3: Wave::new((0xff1d, 0xff1e)),
+            cy: OSC_T,
         }
     }
 
@@ -97,26 +96,130 @@ impl Oscillators {
         let (l1, r1) = self.osc1.next();
         let (l2, r2) = self.osc2.next();
         let (l3, r3) = self.osc3.next();
-        (l1 + l2 + l3, r1 + r2 + r3)
+        //(l1 + l2 + l3, r1 + r2 + r3)
+        //        (l1 + l2, r1 + r2)
+        (l1 + l2, r1 + r2)
     }
 
-    fn update(&mut self, m: MMy) {
-        self.osc1.update(m);
-        self.osc2.update(m);
-        self.osc3.update(m);
+    fn update(&mut self, m: MMy, cy: usize) {
+        if cy > self.cy {
+            self.osc1.update(m);
+            self.osc2.update(m);
+            self.osc3.update(m);
+            self.cy = OSC_T - (cy - self.cy);
+        } else {
+            self.cy -= cy;
+        }
     }
 }
 
 struct Square {
-    on: bool,
-    per: f64,
-    idx: f64,
+    per: f32,
+    idx: f32,
+    len: f32,
+    len_on: bool,
+    ratio: f32,
+    env_s_len: f32,
+    env_s_hi: f32,
+    env_idx: f32,
+    env_vol: f32,
     freq_addr: (u16, u16),
+    wave_addr: u16,
+    env_addr: u16,
 }
 
 impl Square {
-    fn new(freq_addr: (u16, u16)) -> Square {
+    fn new(freq_addr: (u16, u16), wave_addr: u16, env_addr: u16) -> Square {
         Square {
+            per: 1.,
+            idx: 0.,
+            len: 0.,
+            len_on: false,
+            ratio: 0.5,
+            env_s_len: 0.,
+            env_s_hi: 0.,
+            env_idx: 0.,
+            env_vol: 0.,
+            freq_addr,
+            wave_addr,
+            env_addr,
+        }
+    }
+
+    fn update(&mut self, m: MMy) {
+        if m.su_get(self.freq_addr.1) & 0x80 != 0 {
+            m.su_set(self.freq_addr.1, m.su_get(self.freq_addr.1) & !0x80);
+            self.per = SAMPLE_RATE as f32
+                / (131072.
+                    / (2048
+                        - (m.su_get(self.freq_addr.0) as usize
+                            | ((m.su_get(self.freq_addr.1) as usize & 0x7) << 8)))
+                        as f32);
+            self.idx = 0.;
+            self.len =
+                ((64 - (m.su_get(self.wave_addr) & 0x3f)) as f32 * SAMPLE_RATE as f32) / 256.;
+            self.len_on = m.su_get(self.freq_addr.1) & 0x40 != 0;
+            self.ratio = match (m.su_get(self.wave_addr) & 0xc0) >> 6 {
+                0 => 1. / 8.,
+                1 => 1. / 4.,
+                2 => 1. / 2.,
+                3 => 3. / 4.,
+                _ => 1. / 2.,
+            };
+            self.env_s_len = (m.su_get(self.env_addr) & 0x7) as f32 / 64.;
+            self.env_s_hi = if m.su_get(self.env_addr) & 0x8 != 0 {
+                1.
+            } else {
+                -1.
+            } / 15.;
+            self.env_idx = 0.;
+            self.env_vol = ((m.su_get(self.env_addr) & 0xf0) >> 4) as f32 / 15.;
+        }
+    }
+
+    fn next(&mut self) -> (f32, f32) {
+        let env_on = self.env_s_len != 0.;
+
+        if env_on {
+            self.env_idx += 1.;
+            if self.env_idx > self.env_s_len {
+                self.env_vol += self.env_s_hi;
+                if self.env_vol > 1. / 15. {
+                    self.env_vol = 1. / 15.
+                } else if self.env_vol < 0. {
+                    self.env_vol = 0.
+                };
+                self.env_idx %= self.env_s_len;
+            }
+        }
+        let result = if self.idx < self.per * self.ratio {
+            (-0.2 * self.env_vol, -0.2 * self.env_vol)
+        } else {
+            (0.2 * self.env_vol, 0.2 * self.env_vol)
+        };
+
+        if self.len > 0. {
+            self.len -= 1.;
+            self.idx = (self.idx + 1.) % self.per.round();
+        } else if self.len_on {
+            return (0., 0.);
+        } else {
+            self.idx = (self.idx + 1.) % self.per.round();
+        }
+        result
+    }
+}
+
+struct Wave {
+    on: bool,
+    per: f32,
+    idx: f32,
+    freq_addr: (u16, u16),
+}
+
+impl Wave {
+    fn new(freq_addr: (u16, u16)) -> Wave {
+        Wave {
             on: false,
             per: 1.,
             idx: 0.,
@@ -125,13 +228,13 @@ impl Square {
     }
 
     fn update(&mut self, m: MMy) {
-        let per_tmp = SAMPLE_RATE as f64
+        let per_tmp = SAMPLE_RATE as f32
             / 2.
-            / (131072.
+            / (65536.
                 / (2048
                     - (m.su_get(self.freq_addr.0) as usize
                         | ((m.su_get(self.freq_addr.1) as usize & 0x7) << 8)))
-                    as f64);
+                    as f32);
 
         if per_tmp != self.per {
             self.per = per_tmp;

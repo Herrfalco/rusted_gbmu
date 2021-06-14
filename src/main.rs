@@ -132,7 +132,7 @@ fn main() {
             }
             timer.update(&mut mem, cycles);
             disp.update(&mut mem, cycles);
-            audio.update(&mut mem);
+            audio.update(&mut mem, cycles);
         }
     }
 }
