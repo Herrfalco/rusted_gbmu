@@ -1,4 +1,4 @@
-use crate::mem::*
+use crate::mem::*;
 use crate::utils::*;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use std::sync::{Arc, Mutex};
