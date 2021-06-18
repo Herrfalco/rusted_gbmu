@@ -25,7 +25,7 @@ use std::path::Path;
 use timer::*;
 use utils::*;
 
-const DEBUG: bool = true;
+const DEBUG: bool = false;
 
 fn read_opcode(mem: My, pc: RR) -> (u8, u8) {
     (mem.su_get(grr(pc)), mem.su_get(grr(pc).wrapping_add(1)))
@@ -74,6 +74,18 @@ fn main() {
     loop {
         let mut mem = Mem::new(&args[0]);
         mem.init_spe_reg();
+
+        /*
+        mem.su_set(0xff21, 0xf0);
+        mem.su_set(0xff22, 0x45);
+        mem.su_set(0xff23, 0x80);
+        mem.su_set(0xff24, 0xff);
+        mem.su_set(0xff25, 0xff);
+        mem.su_set(0xff52, 0x80);
+        loop {
+            audio.update(&mut mem, 10);
+        }
+        */
 
         if reset {
             if let Some(vram) = &mut dbg.vram {
@@ -130,9 +142,9 @@ fn main() {
                     dec_rr(&mut regs.ime);
                 }
             }
+            audio.update(&mut mem, cycles);
             timer.update(&mut mem, cycles);
             disp.update(&mut mem, cycles);
-            audio.update(&mut mem, cycles);
         }
     }
 }

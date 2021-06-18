@@ -1,10 +1,11 @@
-use crate::mem::*;
+use crate::mem::*
 use crate::utils::*;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use std::sync::{Arc, Mutex};
 
 const SAMPLE_RATE: u32 = 44100;
 const OSC_T: usize = 64;
+const SND_DIV: f32 = 6.;
 
 pub struct Audio {
     stream: cpal::Stream,
@@ -77,28 +78,53 @@ fn stream_thrd(out_buff: &mut [f32], oscs: &Arc<Mutex<Oscillators>>) {
 //add osc trait to make an osc array
 struct Oscillators {
     osc1: Square,
+    osc1_pan: (f32, f32),
     osc2: Square,
+    osc2_pan: (f32, f32),
     osc3: Wave,
+    osc3_pan: (f32, f32),
+    osc4: Noise,
+    osc4_pan: (f32, f32),
+    glob_vol: f32,
+    glob_pan: (f32, f32),
     cy: usize,
 }
 
 impl Oscillators {
     fn new() -> Oscillators {
         Oscillators {
-            osc1: Square::new((0xff13, 0xff14), 0xff11, 0xff12),
-            osc2: Square::new((0xff18, 0xff19), 0xff16, 0xff17),
+            osc1: Square::new((0xff13, 0xff14), 0xff11, 0xff12, 0x1),
+            osc1_pan: (0., 0.),
+            osc2: Square::new((0xff18, 0xff19), 0xff16, 0xff17, 0x2),
+            osc2_pan: (0., 0.),
             osc3: Wave::new((0xff1d, 0xff1e)),
+            osc3_pan: (0., 0.),
+            osc4: Noise::new(),
+            osc4_pan: (0., 0.),
+            glob_vol: 0.,
+            glob_pan: (0., 0.),
             cy: OSC_T,
         }
     }
 
     fn next(&mut self) -> (f32, f32) {
-        let (l1, r1) = self.osc1.next();
-        let (l2, r2) = self.osc2.next();
-        let (l3, r3) = self.osc3.next();
-        //(l1 + l2 + l3, r1 + r2 + r3)
-        //        (l1 + l2, r1 + r2)
-        (l1 + l2, r1 + r2)
+        let osc1 = self.osc1.next() * self.glob_vol;
+        let osc2 = self.osc2.next() * self.glob_vol;
+        let osc3 = self.osc3.next() * self.glob_vol;
+        let osc4 = self.osc4.next() * self.glob_vol;
+
+        (
+            (osc1 * self.osc1_pan.0
+                + osc2 * self.osc2_pan.0
+                + osc3 * self.osc3_pan.0
+                + osc4 * self.osc4_pan.0)
+                * self.glob_pan.0,
+            (osc1 * self.osc1_pan.1
+                + osc2 * self.osc2_pan.1
+                + osc3 * self.osc3_pan.1
+                + osc4 * self.osc4_pan.1)
+                * self.glob_pan.1,
+        )
     }
 
     fn update(&mut self, m: MMy, cy: usize) {
@@ -106,6 +132,28 @@ impl Oscillators {
             self.osc1.update(m);
             self.osc2.update(m);
             self.osc3.update(m);
+            self.osc4.update(m);
+            self.glob_vol = if m.su_get(0xff26) & 0x80 != 0 { 1. } else { 0. };
+            self.glob_pan = (
+                ((m.su_get(0xff24) & 0x7) as f32 / 7.),
+                (((m.su_get(0xff24) & 0x70) >> 4) as f32 / 7.),
+            );
+            self.osc1_pan = (
+                if m.su_get(0xff25) & 0x1 != 0 { 1. } else { 0. },
+                if m.su_get(0xff25) & 0x10 != 0 { 1. } else { 0. },
+            );
+            self.osc2_pan = (
+                if m.su_get(0xff25) & 0x2 != 0 { 1. } else { 0. },
+                if m.su_get(0xff25) & 0x20 != 0 { 1. } else { 0. },
+            );
+            self.osc3_pan = (
+                if m.su_get(0xff25) & 0x3 != 0 { 1. } else { 0. },
+                if m.su_get(0xff25) & 0x30 != 0 { 1. } else { 0. },
+            );
+            self.osc4_pan = (
+                if m.su_get(0xff25) & 0x4 != 0 { 1. } else { 0. },
+                if m.su_get(0xff25) & 0x40 != 0 { 1. } else { 0. },
+            );
             self.cy = OSC_T - (cy - self.cy);
         } else {
             self.cy -= cy;
@@ -126,10 +174,12 @@ struct Square {
     freq_addr: (u16, u16),
     wave_addr: u16,
     env_addr: u16,
+    play_mask: u8,
+    play: bool,
 }
 
 impl Square {
-    fn new(freq_addr: (u16, u16), wave_addr: u16, env_addr: u16) -> Square {
+    fn new(freq_addr: (u16, u16), wave_addr: u16, env_addr: u16, play_mask: u8) -> Square {
         Square {
             per: 1.,
             idx: 0.,
@@ -143,12 +193,20 @@ impl Square {
             freq_addr,
             wave_addr,
             env_addr,
+            play_mask,
+            play: false,
         }
     }
 
     fn update(&mut self, m: MMy) {
+        if !self.play {
+            m.su_set(0xff26, m.su_get(0xff26) & !self.play_mask);
+        }
         if m.su_get(self.freq_addr.1) & 0x80 != 0 {
             m.su_set(self.freq_addr.1, m.su_get(self.freq_addr.1) & !0x80);
+            m.su_set(0xff26, m.su_get(0xff26) | self.play_mask);
+            self.play = true;
+
             self.per = SAMPLE_RATE as f32
                 / (131072.
                     / (2048
@@ -156,56 +214,54 @@ impl Square {
                             | ((m.su_get(self.freq_addr.1) as usize & 0x7) << 8)))
                         as f32);
             self.idx = 0.;
-            self.len =
-                ((64 - (m.su_get(self.wave_addr) & 0x3f)) as f32 * SAMPLE_RATE as f32) / 256.;
+            self.len = (64 - (m.su_get(self.wave_addr) & 0x3f)) as f32 * SAMPLE_RATE as f32 / 256.;
             self.len_on = m.su_get(self.freq_addr.1) & 0x40 != 0;
             self.ratio = match (m.su_get(self.wave_addr) & 0xc0) >> 6 {
                 0 => 1. / 8.,
                 1 => 1. / 4.,
-                2 => 1. / 2.,
                 3 => 3. / 4.,
-                _ => 1. / 2.,
+                2 | _ => 1. / 2.,
             };
-            self.env_s_len = (m.su_get(self.env_addr) & 0x7) as f32 / 64.;
+            self.env_s_len = (m.su_get(self.env_addr) & 0x7) as f32 / 64. * SAMPLE_RATE as f32;
             self.env_s_hi = if m.su_get(self.env_addr) & 0x8 != 0 {
                 1.
             } else {
                 -1.
-            } / 15.;
+            } / 15.
+                / SND_DIV;
             self.env_idx = 0.;
-            self.env_vol = ((m.su_get(self.env_addr) & 0xf0) >> 4) as f32 / 15.;
+            self.env_vol = ((m.su_get(self.env_addr) & 0xf0) >> 4) as f32 / 15. / SND_DIV;
         }
     }
 
-    fn next(&mut self) -> (f32, f32) {
+    fn next(&mut self) -> f32 {
         let env_on = self.env_s_len != 0.;
 
         if env_on {
-            self.env_idx += 1.;
             if self.env_idx > self.env_s_len {
-                self.env_vol += self.env_s_hi;
-                if self.env_vol > 1. / 15. {
-                    self.env_vol = 1. / 15.
+                self.env_vol += self.env_s_hi * (self.env_idx / self.env_s_len);
+                if self.env_vol > 1. {
+                    self.env_vol = 1.;
                 } else if self.env_vol < 0. {
-                    self.env_vol = 0.
-                };
+                    self.env_vol = 0.;
+                }
                 self.env_idx %= self.env_s_len;
             }
+            self.env_idx += 1.;
         }
         let result = if self.idx < self.per * self.ratio {
-            (-0.2 * self.env_vol, -0.2 * self.env_vol)
+            0.
         } else {
-            (0.2 * self.env_vol, 0.2 * self.env_vol)
+            self.env_vol
         };
 
         if self.len > 0. {
             self.len -= 1.;
-            self.idx = (self.idx + 1.) % self.per.round();
         } else if self.len_on {
-            return (0., 0.);
-        } else {
-            self.idx = (self.idx + 1.) % self.per.round();
+            self.play = false;
+            return 0.;
         }
+        self.idx = (self.idx + 1.) % self.per;
         result
     }
 }
@@ -214,7 +270,12 @@ struct Wave {
     on: bool,
     per: f32,
     idx: f32,
+    len: f32,
+    len_on: bool,
+    vol: f32,
     freq_addr: (u16, u16),
+    ram: Vec<f32>,
+    play: bool,
 }
 
 impl Wave {
@@ -223,54 +284,194 @@ impl Wave {
             on: false,
             per: 1.,
             idx: 0.,
+            len: 0.,
+            len_on: false,
+            vol: 0.,
             freq_addr,
+            ram: Vec::new(),
+            play: false,
         }
     }
 
     fn update(&mut self, m: MMy) {
-        let per_tmp = SAMPLE_RATE as f32
-            / 2.
-            / (65536.
-                / (2048
-                    - (m.su_get(self.freq_addr.0) as usize
-                        | ((m.su_get(self.freq_addr.1) as usize & 0x7) << 8)))
-                    as f32);
+        if !self.play {
+            m.su_set(0xff26, m.su_get(0xff26) & !0x4);
+        }
+        if m.su_get(self.freq_addr.1) & 0x80 != 0 {
+            m.su_set(self.freq_addr.1, m.su_get(self.freq_addr.1) & !0x80);
+            m.su_set(0xff26, m.su_get(0xff26) | 0x4);
+            self.play = true;
 
-        if per_tmp != self.per {
-            self.per = per_tmp;
+            self.on = m.su_get(0xff1a) != 0;
+            self.per = SAMPLE_RATE as f32
+                / (65536.
+                    / (2048
+                        - (m.su_get(self.freq_addr.0) as usize
+                            | ((m.su_get(self.freq_addr.1) as usize & 0x7) << 8)))
+                        as f32);
             self.idx = 0.;
+            self.len = (256. - m.su_get(0xff1b) as f32) * SAMPLE_RATE as f32 / 256.;
+            self.len_on = m.su_get(self.freq_addr.1) & 0x40 != 0;
+            self.vol = match (m.su_get(0xff1c) & 0x60) >> 5 {
+                1 => 1.,
+                2 => 0.5,
+                3 => 0.25,
+                0 | _ => 0.,
+            };
+            self.ram.clear();
+            for i in (0x0..=0xf).rev() {
+                let tmp = m.su_get(0xff30 | i);
+
+                self.ram.push((tmp & 0xf) as f32);
+                self.ram.push(((tmp & 0xf0) >> 4) as f32);
+            }
         }
     }
 
-    fn next(&mut self) -> (f32, f32) {
-        let result = if self.idx < self.per / 2. {
-            (-0.2, -0.2)
-        } else {
-            (0.2, 0.2)
-        };
+    fn next(&mut self) -> f32 {
+        if !self.on {
+            return 0.;
+        }
+        let ram_idx = self.idx * 31. / self.per;
+        let result = self.ram[ram_idx.round() as usize] * self.vol / 15. / SND_DIV;
 
-        self.idx = (self.idx + 1.) % self.per.round();
+        if self.len > 0. {
+            self.len -= 1.;
+        } else if self.len_on {
+            self.play = false;
+            return 0.;
+        }
+        self.idx = (self.idx + 1.) % self.per;
         result
     }
 }
 
-/*
-#[test]
-fn audio_test() {
-    let mut audio = Audio::new();
-    let mut count1 = 0;
-    let mut count2 = 0;
-    let mut buf_l = vec![0_f32; CHUNK_SZ];
-    let mut buf_r = vec![0_f32; CHUNK_SZ];
+struct Noise {
+    per: f32,
+    idx: f32,
+    len: f32,
+    len_on: bool,
+    tables: (Vec<f32>, Vec<f32>),
+    cur_table: usize,
+    idx_table: usize,
+    env_s_len: f32,
+    env_s_hi: f32,
+    env_idx: f32,
+    env_vol: f32,
+    play: bool,
+}
 
-    for j in 0..10000000 {
-        if let Some(_) = audio.push_sample(
-            if count1 < 100 { -0.1 } else { 0.1 },
-            if count2 < 75 { -0.1 } else { 0.1 },
-        ) {
-            count1 = (count1 + 1) % 200;
-            count2 = (count2 + 1) % 150;
+impl Noise {
+    fn new() -> Noise {
+        Noise {
+            per: 0.,
+            idx: 0.,
+            len: 0.,
+            len_on: false,
+            tables: (Noise::gen_table(15), Noise::gen_table(7)),
+            cur_table: 0,
+            idx_table: 0,
+            env_s_len: 0.,
+            env_s_hi: 0.,
+            env_idx: 0.,
+            env_vol: 0.,
+            play: false,
         }
     }
+
+    fn gen_table(size: usize) -> Vec<f32> {
+        let mut data: u16;
+        let feeder: u16;
+        let len: usize;
+
+        match size {
+            7 => {
+                data = 0x7f;
+                feeder = 0x40;
+                len = 0x7f;
+            }
+            15 | _ => {
+                data = 0x7fff;
+                feeder = 0x4000;
+                len = 0x7fff;
+            }
+        }
+
+        let mut result = Vec::new();
+
+        for _ in 0..len {
+            let val = data & 0x1;
+
+            data >>= 1;
+            if val ^ data & 0x1 != 0 {
+                data |= feeder;
+            }
+            result.push(val as f32);
+        }
+        result
+    }
+
+    fn update(&mut self, m: MMy) {
+        if !self.play {
+            m.su_set(0xff26, m.su_get(0xff26) & !0x8);
+        }
+        if m.su_get(0xff23) & 0x80 != 0 {
+            m.su_set(0xff23, m.su_get(0xff23) & !0x80);
+            m.su_set(0xff26, m.su_get(0xff26) | 0x8);
+            self.play = true;
+
+            let mut r = (m.su_get(0xff22) & 0x7) as f32;
+
+            if r == 0. {
+                r = 0.5;
+            }
+            self.per = 44100.
+                / (524288. / r / 2_u32.pow(((m.su_get(0xff22) & 0xf0) as u32 >> 4) + 1) as f32);
+            self.idx = 0.;
+            self.len = (64 - (m.su_get(0xff20) & 0x3f)) as f32 * SAMPLE_RATE as f32 / 256.;
+            self.len_on = m.su_get(0xff23) & 0x40 != 0;
+            self.cur_table = if m.su_get(0xff22) & 0x8 != 0 { 1 } else { 0 };
+            self.idx_table = 0;
+            self.env_s_len = (m.su_get(0xff21) & 0x7) as f32 / 64. * SAMPLE_RATE as f32;
+            self.env_s_hi = if m.su_get(0xff21) & 0x8 != 0 { 1. } else { -1. } / 15. / SND_DIV;
+            self.env_idx = 0.;
+            self.env_vol = ((m.su_get(0xff21) & 0xf0) >> 4) as f32 / 15. / SND_DIV;
+        }
+    }
+
+    fn next(&mut self) -> f32 {
+        let env_on = self.env_s_len != 0.;
+
+        if env_on {
+            if self.env_idx > self.env_s_len {
+                self.env_vol += self.env_s_hi * (self.env_idx / self.env_s_len);
+                if self.env_vol > 1. {
+                    self.env_vol = 1.;
+                } else if self.env_vol < 0. {
+                    self.env_vol = 0.;
+                }
+                self.env_idx %= self.env_s_len;
+            }
+            self.env_idx += 1.;
+        }
+        let tab = if self.cur_table == 0 {
+            &self.tables.0
+        } else {
+            &self.tables.1
+        };
+        if self.idx >= self.per {
+            self.idx %= 1.;
+            self.idx_table = (self.idx_table + 1) % tab.len();
+        }
+        let cur_val = tab[self.idx_table] * self.env_vol;
+
+        if self.len > 0. {
+            self.len -= 1.;
+        } else if self.len_on {
+            self.play = false;
+            return 0.;
+        }
+        self.idx += 1.;
+        cur_val
+    }
 }
-*/
