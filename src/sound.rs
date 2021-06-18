@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex};
 
 const SAMPLE_RATE: u32 = 44100;
 const OSC_T: usize = 64;
-const SND_DIV: f32 = 6.;
+const SND_DIV: f32 = 10.;
 
 pub struct Audio {
     stream: cpal::Stream,
@@ -93,9 +93,9 @@ struct Oscillators {
 impl Oscillators {
     fn new() -> Oscillators {
         Oscillators {
-            osc1: Square::new((0xff13, 0xff14), 0xff11, 0xff12, 0x1),
+            osc1: Square::new((0xff13, 0xff14), 0xff11, 0xff12, 0x1, true),
             osc1_pan: (0., 0.),
-            osc2: Square::new((0xff18, 0xff19), 0xff16, 0xff17, 0x2),
+            osc2: Square::new((0xff18, 0xff19), 0xff16, 0xff17, 0x2, false),
             osc2_pan: (0., 0.),
             osc3: Wave::new((0xff1d, 0xff1e)),
             osc3_pan: (0., 0.),
@@ -176,10 +176,21 @@ struct Square {
     env_addr: u16,
     play_mask: u8,
     play: bool,
+    sweep: bool,
+    sweep_on: bool,
+    sweep_per: f32,
+    sweep_idx: f32,
+    sweep_val: f32,
 }
 
 impl Square {
-    fn new(freq_addr: (u16, u16), wave_addr: u16, env_addr: u16, play_mask: u8) -> Square {
+    fn new(
+        freq_addr: (u16, u16),
+        wave_addr: u16,
+        env_addr: u16,
+        play_mask: u8,
+        sweep: bool,
+    ) -> Square {
         Square {
             per: 1.,
             idx: 0.,
@@ -195,6 +206,11 @@ impl Square {
             env_addr,
             play_mask,
             play: false,
+            sweep,
+            sweep_on: false,
+            sweep_per: 0.,
+            sweep_idx: 0.,
+            sweep_val: 0.,
         }
     }
 
@@ -231,6 +247,14 @@ impl Square {
                 / SND_DIV;
             self.env_idx = 0.;
             self.env_vol = ((m.su_get(self.env_addr) & 0xf0) >> 4) as f32 / 15. / SND_DIV;
+            if self.sweep {
+                self.sweep_per =
+                    ((m.su_get(0xff10) & 0x70) >> 4) as f32 * SAMPLE_RATE as f32 / 128.;
+                self.sweep_idx = 0.;
+                self.sweep_val = if m.su_get(0xff10) & 0x8 != 0 { -1. } else { 1. }
+                    / 2_f32.powf((m.su_get(0xff10) & 0x7) as f32);
+                self.sweep_on = m.su_get(0xff10) & 0x7 != 0;
+            }
         }
     }
 
@@ -248,6 +272,16 @@ impl Square {
                 self.env_idx %= self.env_s_len;
             }
             self.env_idx += 1.;
+        }
+        if self.sweep && self.sweep_on {
+            if self.sweep_idx > self.sweep_per {
+                let sweep = self.per * self.sweep_val;
+
+                self.per += sweep;
+                self.sweep_idx %= self.sweep_per;
+            } else {
+                self.sweep_idx += 1.;
+            }
         }
         let result = if self.idx < self.per * self.ratio {
             0.
