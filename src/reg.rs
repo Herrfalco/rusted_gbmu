@@ -76,8 +76,7 @@ impl Regs {
         self.bc.set_16(0x0013);
         self.de.set_16(0x00d8);
         self.hl.set_16(0x014d);
-        //        self.pc.set_16(if debug { 0x100 } else { 0x0 });
-        self.pc.set_16(0x100);
+        self.pc.set_16(if debug { 0x100 } else { 0x0 });
         self.sp.set_16(0xfffe);
     }
 

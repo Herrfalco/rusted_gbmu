@@ -128,12 +128,12 @@ impl Oscillators {
 
         (
             (osc1 * self.osc1_pan.0)
-//                + osc2 * self.osc2_pan.0
+            //                + osc2 * self.osc2_pan.0
 //                + osc3 * self.osc3_pan.0
 //                + osc4 * self.osc4_pan.0)
                 * self.glob_pan.0,
             (osc1 * self.osc1_pan.1)
-//                + osc2 * self.osc2_pan.1
+            //                + osc2 * self.osc2_pan.1
 //                + osc3 * self.osc3_pan.1
 //                + osc4 * self.osc4_pan.1)
                 * self.glob_pan.1,
@@ -274,7 +274,7 @@ impl Square {
             self.sweep_per = ((m.su_get(0xff10) & 0x70) >> 4) as f32 * SAMPLE_RATE as f32 / 128.;
             self.sweep_val = if m.su_get(0xff10) & 0x8 != 0 { -1. } else { 1. }
                 / 2_f32.powf((m.su_get(0xff10) & 0x7) as f32);
-            self.sweep_on = m.su_get(0xff10) & 0x7 != 0;
+            self.sweep_on = m.su_get(0xff10) & 0x70 != 0;
         }
     }
 
