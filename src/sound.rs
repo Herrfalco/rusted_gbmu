@@ -1,11 +1,13 @@
 use crate::mem::*;
 use crate::utils::*;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
 
 const SAMPLE_RATE: u32 = 44100;
 const OSC_T: usize = 64;
 const SND_DIV: f32 = 10.;
+const FILT_SZ: usize = 4;
 
 pub struct Audio {
     stream: cpal::Stream,
@@ -70,8 +72,14 @@ fn stream_thrd(out_buff: &mut [f32], oscs: &Arc<Mutex<Oscillators>>) {
     for i in 0..out_buff.len() / 2 {
         sample = oscs.next();
 
-        out_buff[i * 2] = cpal::Sample::from(&sample.0);
-        out_buff[i * 2 + 1] = cpal::Sample::from(&sample.1);
+        oscs.filt_buff.0.pop_front();
+        oscs.filt_buff.1.pop_front();
+        oscs.filt_buff.0.push_back(sample.0);
+        oscs.filt_buff.1.push_back(sample.1);
+        out_buff[i * 2] =
+            cpal::Sample::from(&(oscs.filt_buff.0.iter().sum::<f32>() / FILT_SZ as f32));
+        out_buff[i * 2 + 1] =
+            cpal::Sample::from(&(oscs.filt_buff.1.iter().sum::<f32>() / FILT_SZ as f32));
     }
 }
 
@@ -88,6 +96,7 @@ struct Oscillators {
     glob_vol: f32,
     glob_pan: (f32, f32),
     cy: usize,
+    filt_buff: (VecDeque<f32>, VecDeque<f32>),
 }
 
 impl Oscillators {
@@ -104,6 +113,10 @@ impl Oscillators {
             glob_vol: 0.,
             glob_pan: (0., 0.),
             cy: OSC_T,
+            filt_buff: (
+                VecDeque::from(vec![0.; FILT_SZ]),
+                VecDeque::from(vec![0.; FILT_SZ]),
+            ),
         }
     }
 
