@@ -64,7 +64,6 @@ fn main() {
     let mut dbg = Debugger::new(DEBUG);
     let mut disp = Display::new();
     let mut header: Header;
-    let mut audio = Audio::new();
 
     let args: Vec<String> = env::args().skip(1).collect();
     if args.len() != 1 {
@@ -74,18 +73,7 @@ fn main() {
     loop {
         let mut mem = Mem::new(&args[0]);
         mem.init_spe_reg();
-
-        /*
-        mem.su_set(0xff21, 0xf0);
-        mem.su_set(0xff22, 0x45);
-        mem.su_set(0xff23, 0x80);
-        mem.su_set(0xff24, 0xff);
-        mem.su_set(0xff25, 0xff);
-        mem.su_set(0xff52, 0x80);
-        loop {
-            audio.update(&mut mem, 10);
-        }
-        */
+        let audio = Audio::new(mem.snd_data.clone());
 
         if reset {
             if let Some(vram) = &mut dbg.vram {
@@ -142,7 +130,6 @@ fn main() {
                     dec_rr(&mut regs.ime);
                 }
             }
-            audio.update(&mut mem, cycles);
             timer.update(&mut mem, cycles);
             disp.update(&mut mem, cycles);
         }

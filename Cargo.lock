@@ -431,6 +431,7 @@ dependencies = [
  "num",
  "num-derive",
  "num-traits",
+ "parking_lot",
  "quit",
  "regex",
  "rustyline",

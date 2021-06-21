@@ -2,14 +2,35 @@ use crate::input::*;
 use crate::mbc::*;
 use crate::reg::api::*;
 use crate::utils::*;
+use parking_lot::RwLock;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
+use std::sync::Arc;
 
 pub const MEM_SZ: usize = 0x10000;
 
+pub type SM = Arc<RwLock<SndMem>>;
+
+pub struct SndMem(Vec<u8>);
+
+impl SndMem {
+    pub fn new() -> SndMem {
+        SndMem(vec![0; 0x30])
+    }
+
+    pub fn get(&self, addr: u16) -> u8 {
+        self.0[addr as usize - 0xff10]
+    }
+
+    pub fn set(&mut self, addr: u16, val: u8) {
+        self.0[addr as usize - 0xff10] = val;
+    }
+}
+
 pub struct Mem {
     pub data: Vec<u8>,
+    pub snd_data: SM,
     pub inputs: Inputs,
     mbc: Box<dyn MBC>,
 }
@@ -18,6 +39,7 @@ impl Mem {
     pub fn new(path: &str) -> Mem {
         let mut result = Mem {
             data: vec![0; MEM_SZ],
+            snd_data: Arc::new(RwLock::new(SndMem::new())),
             inputs: Inputs::new(),
             mbc: MBC0::new(Path::new("")),
         };
@@ -58,6 +80,8 @@ impl Mem {
     pub fn get(&self, addr: u16, su: bool) -> u8 {
         if let Some(res) = self.mbc.get(addr) {
             res
+        } else if addr >= 0xff10 && addr <= 0xff3f {
+            self.snd_data.read().get(addr)
         } else {
             if !su {
                 match addr {
@@ -82,10 +106,12 @@ impl Mem {
     }
 
     pub fn set(&mut self, addr: u16, val: u8, su: bool) {
-        if let Some(_) = self.mbc.set(addr, val) {
-        } else {
-            let mut tmp = val;
+        let mut tmp = val;
 
+        if let Some(_) = self.mbc.set(addr, val) {
+        } else if addr >= 0xff10 && addr <= 0xff3f {
+            self.snd_data.write().set(addr, tmp);
+        } else {
             if !su {
                 match addr {
                     DIV => tmp = 0,
