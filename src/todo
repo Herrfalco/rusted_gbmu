@@ -13,3 +13,5 @@ static lazy regex ~
 
 help for param and debug
 day counter carry bit
+
+ops as lazy statics
