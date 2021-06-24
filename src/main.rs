@@ -18,10 +18,12 @@ use mem::*;
 use ops::imp::dec_rr;
 use ops::imp::rst;
 use ops::ops::*;
+use parking_lot::RwLock;
 use reg::{api::*, *};
 use sound::*;
 use std::env;
 use std::path::Path;
+use std::sync::Arc;
 use timer::*;
 use utils::*;
 
@@ -40,7 +42,7 @@ fn read_param(mem: My, pc: MRR, len: usize) -> u16 {
     result
 }
 
-fn handl_int(m: &mut Mem, r: &mut Regs) {
+fn handl_int<'a, 'b>(m: &'a mut Mem<'b>, r: &mut Regs) {
     srr(&mut r.ime, 0);
     for i in 0..5 {
         if (0x1 << i) & (m.su_get(IE) & 0x1f) & (m.su_get(IF) & 0x1f) != 0 {
@@ -71,9 +73,11 @@ fn main() {
     }
 
     loop {
+        let snd_mem = Arc::new(RwLock::new(SndMem::new()));
         let mut mem = Mem::new(&args[0]);
-        mem.init_spe_reg();
-        let audio = Audio::new(mem.snd_data.clone());
+        let ops = Ops::new();
+        mem.init_spe_reg(&snd_mem);
+        let _audio = Audio::new(snd_mem.clone());
 
         if reset {
             if let Some(vram) = &mut dbg.vram {
@@ -90,7 +94,6 @@ fn main() {
         let mut regs = Regs::new();
         regs.init(DEBUG);
 
-        let ops = Ops::new();
         let mut timer = Timer::new(&mut mem);
 
         let mut opcode: (u8, u8);
@@ -121,7 +124,7 @@ fn main() {
                 }
                 tmp = grr(&regs.pc).wrapping_add(op.len() as u16);
                 srr(&mut regs.pc, tmp);
-                cycles = if op.exec(&mut regs, &mut mem, param) {
+                cycles = if op.exec(&mut regs, &mut mem, param, &snd_mem) {
                     op.cycles.0
                 } else {
                     op.cycles.1

@@ -29,8 +29,11 @@ impl Op {
         self.len
     }
 
-    pub fn exec(&self, r: &mut Regs, m: &mut Mem, p: u16) -> bool {
-        (self.func)(r, m, p)
+    pub fn exec<'a>(&self, r: &mut Regs, m: &mut Mem<'a>, p: u16, sm: &'a SM) -> bool {
+        m.lock_snd(sm.write());
+        let result = (self.func)(r, m, p);
+        m.unlock_snd();
+        result
     }
 }
 

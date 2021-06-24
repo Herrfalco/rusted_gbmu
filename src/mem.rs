@@ -2,7 +2,7 @@ use crate::input::*;
 use crate::mbc::*;
 use crate::reg::api::*;
 use crate::utils::*;
-use parking_lot::RwLock;
+use parking_lot::{RwLock, RwLockWriteGuard};
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
@@ -10,7 +10,11 @@ use std::sync::Arc;
 
 pub const MEM_SZ: usize = 0x10000;
 
+pub type MMy<'a, 'b> = &'a mut Mem<'b>;
+pub type My<'a, 'b> = &'a Mem<'b>;
+
 pub type SM = Arc<RwLock<SndMem>>;
+pub type SL<'a> = RwLockWriteGuard<'a, SndMem>;
 
 pub struct SndMem(Vec<u8>);
 
@@ -28,18 +32,18 @@ impl SndMem {
     }
 }
 
-pub struct Mem {
+pub struct Mem<'a> {
     pub data: Vec<u8>,
-    pub snd_data: SM,
+    pub snd_lock: Option<SL<'a>>,
     pub inputs: Inputs,
     mbc: Box<dyn MBC>,
 }
 
-impl Mem {
+impl<'a> Mem<'a> {
     pub fn new(path: &str) -> Mem {
         let mut result = Mem {
             data: vec![0; MEM_SZ],
-            snd_data: Arc::new(RwLock::new(SndMem::new())),
+            snd_lock: None,
             inputs: Inputs::new(),
             mbc: MBC0::new(Path::new("")),
         };
@@ -59,6 +63,14 @@ impl Mem {
             };
         }
         result
+    }
+
+    pub fn lock_snd(&mut self, sl: SL<'a>) {
+        self.snd_lock = Some(sl);
+    }
+
+    pub fn unlock_snd(&mut self) {
+        self.snd_lock = None;
     }
 
     fn dma(&mut self, val: u8) {
@@ -81,7 +93,10 @@ impl Mem {
         if let Some(res) = self.mbc.get(addr) {
             res
         } else if addr >= 0xff10 && addr <= 0xff3f {
-            self.snd_data.read().get(addr)
+            self.snd_lock
+                .as_ref()
+                .unwrap_or_else(|| fatal_err("Can't read from sound memory", 974))
+                .get(addr)
         } else {
             if !su {
                 match addr {
@@ -110,7 +125,11 @@ impl Mem {
 
         if let Some(_) = self.mbc.set(addr, val) {
         } else if addr >= 0xff10 && addr <= 0xff3f {
-            self.snd_data.write().set(addr, tmp);
+            self.snd_lock
+                .as_mut()
+                .unwrap()
+                //                .unwrap_or_else(|| fatal_err("Can't write to sound memory", 976))
+                .set(addr, tmp);
         } else {
             if !su {
                 match addr {
@@ -139,29 +158,33 @@ impl Mem {
         Ok(())
     }
 
-    pub fn init_spe_reg(&mut self) {
+    pub fn init_spe_reg(&mut self, sm: &'a SM) {
         self.su_set(DIV, 0x00);
         self.su_set(TIMA, 0x00);
         self.su_set(TMA, 0x00);
         self.su_set(TAC, 0x00);
-        self.su_set(NR10, 0x80);
-        self.su_set(NR11, 0xbf);
-        self.su_set(NR12, 0xf3);
-        self.su_set(NR14, 0xbf);
-        self.su_set(NR21, 0x3f);
-        self.su_set(NR22, 0x00);
-        self.su_set(NR24, 0xbf);
-        self.su_set(NR30, 0x7f);
-        self.su_set(NR31, 0xff);
-        self.su_set(NR32, 0x9f);
-        self.su_set(NR34, 0xbf);
-        self.su_set(NR41, 0xff);
-        self.su_set(NR42, 0x00);
-        self.su_set(NR43, 0x00);
-        self.su_set(NR44, 0xbf);
-        self.su_set(NR50, 0x77);
-        self.su_set(NR51, 0xf3);
-        self.su_set(NR52, 0xf1);
+
+        self.lock_snd(sm.write());
+        self.nu_set(NR10, 0x80);
+        self.nu_set(NR11, 0xbf);
+        self.nu_set(NR12, 0xf3);
+        self.nu_set(NR14, 0xbf);
+        self.nu_set(NR21, 0x3f);
+        self.nu_set(NR22, 0x00);
+        self.nu_set(NR24, 0xbf);
+        self.nu_set(NR30, 0x7f);
+        self.nu_set(NR31, 0xff);
+        self.nu_set(NR32, 0x9f);
+        self.nu_set(NR34, 0xbf);
+        self.nu_set(NR41, 0xff);
+        self.nu_set(NR42, 0x00);
+        self.nu_set(NR43, 0x00);
+        self.nu_set(NR44, 0xbf);
+        self.nu_set(NR50, 0x77);
+        self.nu_set(NR51, 0xf3);
+        self.nu_set(NR52, 0xf1);
+        self.unlock_snd();
+
         self.su_set(LCDC, 0x91);
         self.su_set(SCY, 0x00);
         self.su_set(SCX, 0x00);
@@ -174,9 +197,6 @@ impl Mem {
         self.su_set(IE, 0x00);
     }
 }
-
-pub type MMy<'a> = &'a mut Mem;
-pub type My<'a> = &'a Mem;
 
 #[cfg(test)]
 mod tests {

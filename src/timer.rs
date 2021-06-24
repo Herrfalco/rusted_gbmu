@@ -10,7 +10,7 @@ pub struct Timer {
     tac_sav: u8,
 }
 
-impl Timer {
+impl<'a> Timer {
     pub fn new(m: MMy) -> Timer {
         let mut result = Timer {
             div_cy: DIV_T,

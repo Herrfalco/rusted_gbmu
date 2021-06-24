@@ -531,7 +531,7 @@ impl Noise {
     }
 
     fn mload(&mut self) {
-        let mut m = self.snd_mem.read();
+        let m = self.snd_mem.read();
 
         self.init = m.get(0xff23) & 0x80 != 0;
         if self.init {
