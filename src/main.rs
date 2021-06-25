@@ -73,7 +73,7 @@ fn main() {
     loop {
         let mut mem = Mem::new(&args[0]);
         mem.init_spe_reg();
-        let audio = Audio::new(mem.snd_data.clone());
+        let mut audio = Audio::new(mem.snd_data.clone());
 
         if reset {
             if let Some(vram) = &mut dbg.vram {
@@ -132,6 +132,7 @@ fn main() {
             }
             timer.update(&mut mem, cycles);
             disp.update(&mut mem, cycles);
+            audio.update();
         }
     }
 }

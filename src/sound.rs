@@ -1,15 +1,18 @@
 use crate::mem::*;
 use crate::utils::*;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use parking_lot::FairMutex;
 use std::collections::VecDeque;
+use std::sync::Arc;
 
 const SAMPLE_RATE: u32 = 44100;
 const SND_DIV: f32 = 6.;
 const FILT_SZ: usize = 3;
 
 pub struct Audio {
-    stream: cpal::Stream,
-    sample_rate: u32,
+    _stream: cpal::Stream,
+    _sample_rate: u32,
+    oscs: Arc<FairMutex<Oscillators>>,
 }
 
 impl Audio {
@@ -38,11 +41,14 @@ impl Audio {
             .unwrap_or_else(|| fatal_err("Can't find suitable output configuration", 25))
             .into();
         let err_fn = |_| fatal_err("An error occurred on the output audio stream", 26);
-        let mut oscs = Oscillators::new(snd_mem);
+        let oscs = Arc::new(FairMutex::new(Oscillators::new(snd_mem)));
+        let oscs_clone = oscs.clone();
         let stream = device
             .build_output_stream(
                 &config,
-                move |data: &mut [f32], _: &cpal::OutputCallbackInfo| stream_thrd(data, &mut oscs),
+                move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
+                    stream_thrd(data, oscs_clone.clone())
+                },
                 err_fn,
             )
             .unwrap_or_else(|_| fatal_err("Can't create output stream", 27));
@@ -50,16 +56,22 @@ impl Audio {
             .play()
             .unwrap_or_else(|_| fatal_err("Can't run output stream", 28));
         Audio {
-            stream,
-            sample_rate: SAMPLE_RATE,
+            _stream: stream,
+            _sample_rate: SAMPLE_RATE,
+            oscs,
         }
+    }
+
+    pub fn update(&mut self) {
+        self.oscs.lock().update();
     }
 }
 
-fn stream_thrd(out_buff: &mut [f32], oscs: &mut Oscillators) {
+fn stream_thrd(out_buff: &mut [f32], oscs: Arc<FairMutex<Oscillators>>) {
     let mut sample;
 
     for i in 0..out_buff.len() / 2 {
+        let mut oscs = oscs.lock();
         sample = oscs.next();
 
         oscs.filt_buff.0.pop_front();
@@ -115,6 +127,13 @@ impl Oscillators {
             ),
             snd_mem,
         }
+    }
+
+    fn update(&mut self) {
+        self.osc1.minit();
+        self.osc2.minit();
+        self.osc3.minit();
+        self.osc4.minit();
     }
 
     fn next(&mut self) -> (f32, f32) {
@@ -240,7 +259,7 @@ impl Square {
         }
     }
 
-    fn mload(&mut self) {
+    fn minit(&mut self) {
         let m = self.snd_mem.read();
 
         self.init = m.get(self.freq_addr.1) & 0x80 != 0;
@@ -251,6 +270,11 @@ impl Square {
             self.sweep_idx = 0.;
             self.env_vol = ((m.get(self.env_addr) & 0xf0) >> 4) as f32 / 15. / SND_DIV;
         }
+    }
+
+    fn mload(&mut self) {
+        let m = self.snd_mem.read();
+
         self.freq = m.get(self.freq_addr.0) as u16 | ((m.get(self.freq_addr.1) as u16 & 0x7) << 8);
         self.len = (64 - (m.get(self.wave_addr) & 0x3f)) as f32 * SAMPLE_RATE as f32 / 256.;
         self.len_on = m.get(self.freq_addr.1) & 0x40 != 0;
@@ -390,7 +414,7 @@ impl Wave {
         }
     }
 
-    fn mload(&mut self) {
+    fn minit(&mut self) {
         let m = self.snd_mem.read();
 
         self.init = m.get(self.freq_addr.1) & 0x80 != 0;
@@ -398,6 +422,11 @@ impl Wave {
             self.per_idx = 0.;
             self.len_idx = 0.;
         }
+    }
+
+    fn mload(&mut self) {
+        let m = self.snd_mem.read();
+
         self.on = m.get(0xff1a) != 0;
         self.freq = m.get(self.freq_addr.0) as u16 | ((m.get(self.freq_addr.1) as u16 & 0x7) << 8);
         self.len = (256. - m.get(0xff1b) as f32) * SAMPLE_RATE as f32 / 256.;
@@ -530,8 +559,8 @@ impl Noise {
         result
     }
 
-    fn mload(&mut self) {
-        let mut m = self.snd_mem.read();
+    fn minit(&mut self) {
+        let m = self.snd_mem.read();
 
         self.init = m.get(0xff23) & 0x80 != 0;
         if self.init {
@@ -541,6 +570,10 @@ impl Noise {
             self.idx_table = 0;
             self.env_vol = ((m.get(0xff21) & 0xf0) >> 4) as f32 / 15. / SND_DIV;
         }
+    }
+
+    fn mload(&mut self) {
+        let m = self.snd_mem.read();
 
         let mut r = (m.get(0xff22) & 0x7) as f32;
         r = if r != 0. { r } else { 0.5 };
@@ -548,7 +581,7 @@ impl Noise {
         self.len = (64 - (m.get(0xff20) & 0x3f)) as f32 * SAMPLE_RATE as f32 / 256.;
         self.len_on = m.get(0xff23) & 0x40 != 0;
         self.env_s_len = (m.get(0xff21) & 0x7) as f32 / 64. * SAMPLE_RATE as f32;
-        self.env_s_hi = if m.get(0xff21) & 0x8 != 0 { 1. } else { -1. } / 15. / SND_DIV;
+        self.env_s_hi = if m.get(0xff21) & 0x8 != 0 { 1. } else { -1. } / 15. / SND_DIV / 1.2;
         self.cur_table = if m.get(0xff22) & 0x8 != 0 { 1 } else { 0 };
     }
 
