@@ -194,6 +194,7 @@ struct Square {
     freq: u16,
     ratio: f32,
     per_idx: f32,
+    stop: bool,
 
     len: f32,
     len_on: bool,
@@ -203,7 +204,6 @@ struct Square {
     env_s_hi: f32,
     env_vol: f32,
     env_idx: f32,
-    env_stop: bool,
 
     sweep_per: f32,
     sweep_up: bool,
@@ -234,6 +234,7 @@ impl Square {
             freq: 0,
             ratio: 0.5,
             per_idx: 0.,
+            stop: false,
 
             len: 0.,
             len_on: false,
@@ -243,7 +244,6 @@ impl Square {
             env_s_hi: 0.,
             env_vol: 0.,
             env_idx: 0.,
-            env_stop: false,
 
             sweep_per: 0.,
             sweep_up: false,
@@ -293,13 +293,13 @@ impl Square {
             -1.
         } / 15.
             / SND_DIV;
-        self.env_stop = m.get(self.env_addr) == 0;
         if self.sweep {
             self.sweep_per = ((m.get(0xff10) & 0x70) >> 4) as f32 * SAMPLE_RATE as f32 / 128.;
             self.sweep_up = m.get(0xff10) & 0x8 == 0;
             self.sweep_n = (m.get(0xff10) & 0x7) as u16;
             self.sweep_on = m.get(0xff10) & 0x70 != 0;
         }
+        self.stop = m.get(self.env_addr) == 0 || self.freq == 0x7ff;
     }
 
     fn msave(&mut self) {
@@ -331,7 +331,7 @@ impl Square {
         self.mload();
         let env_on = self.env_s_len != 0.;
 
-        if self.env_stop {
+        if self.stop {
             self.env_vol = 0.;
         } else if env_on {
             if self.env_idx >= self.env_s_len {
@@ -589,8 +589,8 @@ impl Noise {
         self.len_on = m.get(0xff23) & 0x40 != 0;
         self.env_s_len = (m.get(0xff21) & 0x7) as f32 / 64. * SAMPLE_RATE as f32;
         self.env_s_hi = if m.get(0xff21) & 0x8 != 0 { 1. } else { -1. } / 15. / SND_DIV;
-        self.env_stop = m.get(0xff21) == 0;
         self.cur_table = if m.get(0xff22) & 0x8 != 0 { 1 } else { 0 };
+        self.env_stop = m.get(0xff21) == 0;
     }
 
     fn msave(&mut self) {
