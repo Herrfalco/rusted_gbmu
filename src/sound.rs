@@ -5,9 +5,9 @@ use parking_lot::FairMutex;
 use std::collections::VecDeque;
 use std::sync::Arc;
 
-const SAMPLE_RATE: u32 = 44100;
+const SAMPLE_RATE: u32 = 96000;
 const SND_DIV: f32 = 6.;
-const FILT_SZ: usize = 3;
+const FILT_SZ: usize = 4;
 
 pub struct Audio {
     _stream: cpal::Stream,
@@ -203,6 +203,7 @@ struct Square {
     env_s_hi: f32,
     env_vol: f32,
     env_idx: f32,
+    env_stop: bool,
 
     sweep_per: f32,
     sweep_up: bool,
@@ -242,6 +243,7 @@ impl Square {
             env_s_hi: 0.,
             env_vol: 0.,
             env_idx: 0.,
+            env_stop: false,
 
             sweep_per: 0.,
             sweep_up: false,
@@ -291,6 +293,7 @@ impl Square {
             -1.
         } / 15.
             / SND_DIV;
+        self.env_stop = m.get(self.env_addr) == 0;
         if self.sweep {
             self.sweep_per = ((m.get(0xff10) & 0x70) >> 4) as f32 * SAMPLE_RATE as f32 / 128.;
             self.sweep_up = m.get(0xff10) & 0x8 == 0;
@@ -328,7 +331,9 @@ impl Square {
         self.mload();
         let env_on = self.env_s_len != 0.;
 
-        if env_on {
+        if self.env_stop {
+            self.env_vol = 0.;
+        } else if env_on {
             if self.env_idx >= self.env_s_len {
                 self.env_vol += self.env_s_hi * (self.env_idx / self.env_s_len);
                 if self.env_vol > 1. {
@@ -500,6 +505,7 @@ struct Noise {
     env_s_hi: f32,
     env_vol: f32,
     env_idx: f32,
+    env_stop: bool,
 
     snd_mem: SM,
 }
@@ -523,6 +529,7 @@ impl Noise {
             env_s_hi: 0.,
             env_idx: 0.,
             env_vol: 0.,
+            env_stop: false,
 
             snd_mem,
         }
@@ -581,7 +588,8 @@ impl Noise {
         self.len = (64 - (m.get(0xff20) & 0x3f)) as f32 * SAMPLE_RATE as f32 / 256.;
         self.len_on = m.get(0xff23) & 0x40 != 0;
         self.env_s_len = (m.get(0xff21) & 0x7) as f32 / 64. * SAMPLE_RATE as f32;
-        self.env_s_hi = if m.get(0xff21) & 0x8 != 0 { 1. } else { -1. } / 15. / SND_DIV / 1.2;
+        self.env_s_hi = if m.get(0xff21) & 0x8 != 0 { 1. } else { -1. } / 15. / SND_DIV;
+        self.env_stop = m.get(0xff21) == 0;
         self.cur_table = if m.get(0xff22) & 0x8 != 0 { 1 } else { 0 };
     }
 
@@ -605,7 +613,9 @@ impl Noise {
         self.mload();
         let env_on = self.env_s_len != 0.;
 
-        if env_on {
+        if self.env_stop {
+            self.env_vol = 0.;
+        } else if env_on {
             if self.env_idx > self.env_s_len {
                 self.env_vol += self.env_s_hi * (self.env_idx / self.env_s_len);
                 if self.env_vol > 1. {
