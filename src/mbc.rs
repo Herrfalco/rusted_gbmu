@@ -1,25 +1,15 @@
 use crate::header::*;
 use crate::utils::*;
 use chrono::prelude::*;
-use std::fs::File;
+use std::fs::{read, write, File};
 use std::io::Read;
 use std::path::Path;
 
+#[allow(unused_variables)]
 pub trait MBC {
     fn new(path: &Path) -> Box<Self>
     where
         Self: Sized;
-    fn get(&self, addr: u16) -> Option<u8>;
-    fn set(&mut self, addr: u16, val: u8) -> Option<()>;
-}
-
-pub struct MBC0();
-
-#[allow(unused_variables)]
-impl MBC for MBC0 {
-    fn new(path: &Path) -> Box<Self> {
-        Box::new(MBC0())
-    }
 
     fn get(&self, addr: u16) -> Option<u8> {
         None
@@ -30,7 +20,36 @@ impl MBC for MBC0 {
     }
 }
 
+fn save(name: &str, ram: &[u8]) {
+    write(name, ram).unwrap_or_else(|_| fatal_err("Can't write to backup file", 888));
+    println!("Successful backup...");
+}
+
+fn load(name: &Path, ram: &mut Vec<u8>) -> Option<()> {
+    if name.exists() {
+        println!("Loading backup...");
+        *ram = read(name).unwrap_or_else(|_| fatal_err("Can't read from backup file", 102));
+        return Some(());
+    }
+    println!("No backup found...");
+    None
+}
+
+pub struct MBC0();
+
+impl Drop for MBC0 {
+    fn drop(&mut self) {}
+}
+
+#[allow(unused_variables)]
+impl MBC for MBC0 {
+    fn new(path: &Path) -> Box<Self> {
+        Box::new(MBC0())
+    }
+}
+
 pub struct MBC1 {
+    sav_name: String,
     rom: Vec<u8>,
     rom_sz: usize,
     rom_nb: usize,
@@ -40,9 +59,22 @@ pub struct MBC1 {
     ram_en: bool,
 }
 
+impl Drop for MBC1 {
+    fn drop(&mut self) {
+        save(&self.sav_name, &self.ram);
+    }
+}
+
 impl MBC for MBC1 {
     fn new(path: &Path) -> Box<Self> {
         let mut result = Box::new(MBC1 {
+            sav_name: format!(
+                "../save/{}.sav",
+                path.file_stem()
+                    .unwrap_or_else(|| fatal_err("Bad backup file name", 218))
+                    .to_str()
+                    .unwrap_or_else(|| fatal_err("Bad backup file name", 218))
+            ),
             rom: vec![],
             rom_sz: 0,
             rom_nb: 0x01,
@@ -57,7 +89,9 @@ impl MBC for MBC1 {
             .unwrap_or_else(|_| fatal_err("Can't read from rom", 102));
         result.rom_sz = result.rom[0x148] as usize;
         result.ram_sz = result.rom[0x149] as usize;
-        result.ram = vec![0; RAM_SZ[result.ram_sz] / 8 * 0x2000];
+        if let None = load(Path::new(&result.sav_name), &mut result.ram) {
+            result.ram = vec![0; RAM_SZ[result.ram_sz] / 8 * 0x2000];
+        }
         result
     }
 
@@ -97,15 +131,29 @@ impl MBC for MBC1 {
 }
 
 pub struct MBC2 {
+    sav_name: String,
     rom: Vec<u8>,
     rom_nb: usize,
     ram: Vec<u8>,
     ram_en: bool,
 }
 
+impl Drop for MBC2 {
+    fn drop(&mut self) {
+        save(&self.sav_name, &self.ram);
+    }
+}
+
 impl MBC for MBC2 {
     fn new(path: &Path) -> Box<Self> {
         let mut result = Box::new(MBC2 {
+            sav_name: format!(
+                "../save/{}.sav",
+                path.file_stem()
+                    .unwrap_or_else(|| fatal_err("Bad backup file name", 218))
+                    .to_str()
+                    .unwrap_or_else(|| fatal_err("Bad backup file name", 218))
+            ),
             rom: vec![],
             rom_nb: 0x1,
             ram: vec![],
@@ -115,7 +163,9 @@ impl MBC for MBC2 {
 
         file.read_to_end(&mut result.rom)
             .unwrap_or_else(|_| fatal_err("Can't read from rom", 102));
-        result.ram = vec![0; 0x200];
+        if let None = load(Path::new(&result.sav_name), &mut result.ram) {
+            result.ram = vec![0; 0x200];
+        }
         result
     }
 
@@ -161,6 +211,7 @@ enum RamClk {
 }
 
 pub struct MBC3 {
+    sav_name: String,
     rom: Vec<u8>,
     rom_nb: usize,
     ram: Vec<u8>,
@@ -172,9 +223,22 @@ pub struct MBC3 {
     loc_tm: DateTime<Local>,
 }
 
+impl Drop for MBC3 {
+    fn drop(&mut self) {
+        save(&self.sav_name, &self.ram);
+    }
+}
+
 impl MBC for MBC3 {
     fn new(path: &Path) -> Box<Self> {
         let mut result = Box::new(MBC3 {
+            sav_name: format!(
+                "../save/{}.sav",
+                path.file_stem()
+                    .unwrap_or_else(|| fatal_err("Bad backup file name", 218))
+                    .to_str()
+                    .unwrap_or_else(|| fatal_err("Bad backup file name", 218))
+            ),
             rom: vec![],
             rom_nb: 0x01,
             ram: vec![],
@@ -190,7 +254,9 @@ impl MBC for MBC3 {
         file.read_to_end(&mut result.rom)
             .unwrap_or_else(|_| fatal_err("Can't read from rom", 102));
         result.ram_sz = result.rom[0x149] as usize;
-        result.ram = vec![0; RAM_SZ[result.ram_sz] / 8 * 0x2000];
+        if let None = load(Path::new(&result.sav_name), &mut result.ram) {
+            result.ram = vec![0; RAM_SZ[result.ram_sz] / 8 * 0x2000];
+        }
         result
     }
 
@@ -280,6 +346,7 @@ impl MBC3 {
 }
 
 pub struct MBC5 {
+    sav_name: String,
     rom: Vec<u8>,
     rom_nb: usize,
     ram: Vec<u8>,
@@ -288,9 +355,22 @@ pub struct MBC5 {
     ram_en: bool,
 }
 
+impl Drop for MBC5 {
+    fn drop(&mut self) {
+        save(&self.sav_name, &self.ram);
+    }
+}
+
 impl MBC for MBC5 {
     fn new(path: &Path) -> Box<Self> {
         let mut result = Box::new(MBC5 {
+            sav_name: format!(
+                "../save/{}.sav",
+                path.file_stem()
+                    .unwrap_or_else(|| fatal_err("Bad backup file name", 218))
+                    .to_str()
+                    .unwrap_or_else(|| fatal_err("Bad backup file name", 218))
+            ),
             rom: vec![],
             rom_nb: 0x01,
             ram: vec![],
@@ -303,7 +383,9 @@ impl MBC for MBC5 {
         file.read_to_end(&mut result.rom)
             .unwrap_or_else(|_| fatal_err("Can't read from rom", 102));
         result.ram_sz = result.rom[0x149] as usize;
-        result.ram = vec![0; RAM_SZ[result.ram_sz] / 8 * 0x2000];
+        if let None = load(Path::new(&result.sav_name), &mut result.ram) {
+            result.ram = vec![0; RAM_SZ[result.ram_sz] / 8 * 0x2000];
+        }
         result
     }
 

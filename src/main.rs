@@ -82,9 +82,7 @@ fn main() {
             disp.reset();
         } else {
             header = Header::new(&mem.data);
-            if DEBUG {
-                println!("{}", header);
-            }
+            println!("{}", header);
         }
 
         let mut regs = Regs::new();
