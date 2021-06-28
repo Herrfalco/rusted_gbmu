@@ -839,7 +839,9 @@ impl Ops {
         ops[0x10] = Some(Op::new("STOP", 2, (4, 0), |_r, _m, _p| -> bool {
             stop(_m)
         }));
-        ops[0x76] = Some(Op::new("HALT", 1, (4, 0), |_r, _m, _p| -> bool { halt() }));
+        ops[0x76] = Some(Op::new("HALT", 1, (4, 0), |_r, _m, _p| -> bool {
+            halt(&mut _r.halt)
+        }));
         ops[0xf3] = Some(Op::new("DI", 1, (4, 0), |_r, _m, _p| -> bool {
             di(&mut _r.ime)
         }));

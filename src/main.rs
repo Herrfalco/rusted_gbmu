@@ -15,8 +15,7 @@ use debug::*;
 use disp::*;
 use header::*;
 use mem::*;
-use ops::imp::dec_rr;
-use ops::imp::rst;
+use ops::imp::{dec_rr, rst};
 use ops::ops::*;
 use reg::{api::*, *};
 use sound::*;
@@ -25,7 +24,7 @@ use std::path::Path;
 use timer::*;
 use utils::*;
 
-const DEBUG: bool = false;
+const DEBUG: bool = true;
 
 fn read_opcode(mem: My, pc: RR) -> (u8, u8) {
     (mem.su_get(grr(pc)), mem.su_get(grr(pc).wrapping_add(1)))
@@ -86,7 +85,6 @@ fn main() {
         }
 
         let mut regs = Regs::new();
-        regs.init(DEBUG);
 
         let ops = Ops::new();
         let mut timer = Timer::new(&mut mem);
@@ -104,28 +102,35 @@ fn main() {
                 }
                 boot_rom = false;
             }
+            if ((mem.su_get(IE) & 0x1f) & (mem.su_get(IF) & 0x1f)) != 0 && regs.halt {
+                regs.halt = false;
+            }
             if grr(&regs.ime) == 1 && ((mem.su_get(IE) & 0x1f) & (mem.su_get(IF) & 0x1f)) != 0 {
                 handl_int(&mut mem, &mut regs);
                 cycles = 20;
             } else {
-                opcode = read_opcode(&mem, &mut regs.pc);
-                op = &ops.get(opcode).unwrap_or_else(|| {
-                    fatal_err(&format!("Opcode 0x{:02x} not implemented", opcode.0), 3)
-                });
-                param = read_param(&mem, &mut regs.pc, op.len());
-                if !dbg.run(&mut mem, &mut regs, op, param) {
-                    reset = true;
-                    break;
-                }
-                tmp = grr(&regs.pc).wrapping_add(op.len() as u16);
-                srr(&mut regs.pc, tmp);
-                cycles = if op.exec(&mut regs, &mut mem, param) {
-                    op.cycles.0
+                if !regs.halt {
+                    opcode = read_opcode(&mem, &mut regs.pc);
+                    op = &ops.get(opcode).unwrap_or_else(|| {
+                        fatal_err(&format!("Opcode 0x{:02x} not implemented", opcode.0), 3)
+                    });
+                    param = read_param(&mem, &mut regs.pc, op.len());
+                    if !dbg.run(&mut mem, &mut regs, op, param) {
+                        reset = true;
+                        break;
+                    }
+                    tmp = grr(&regs.pc).wrapping_add(op.len() as u16);
+                    srr(&mut regs.pc, tmp);
+                    cycles = if op.exec(&mut regs, &mut mem, param) {
+                        op.cycles.0
+                    } else {
+                        op.cycles.1
+                    };
+                    if grr(&regs.ime) > 1 {
+                        dec_rr(&mut regs.ime);
+                    }
                 } else {
-                    op.cycles.1
-                };
-                if grr(&regs.ime) > 1 {
-                    dec_rr(&mut regs.ime);
+                    cycles = 1;
                 }
             }
             timer.update(&mut mem, cycles);

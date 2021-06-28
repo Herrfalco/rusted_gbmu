@@ -1,12 +1,11 @@
-spe reg
 error codes
 magic values
 match and if let to unwrap_or/ unwrap_or_else
 b already set
 search for println
 clickable vram display
-verify su get su set
 
+put inputs outside display
 track leaks
 use return instead of quit
 static lazy regex ~

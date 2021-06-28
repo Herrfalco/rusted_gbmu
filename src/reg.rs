@@ -56,11 +56,12 @@ pub struct Regs {
     pub pc: Reg,
     pub sp: Reg,
     pub ime: Reg,
+    pub halt: bool,
 }
 
 impl Regs {
     pub fn new() -> Regs {
-        Regs {
+        let mut result = Regs {
             af: Reg::new(),
             bc: Reg::new(),
             de: Reg::new(),
@@ -68,16 +69,15 @@ impl Regs {
             pc: Reg::new(),
             sp: Reg::new(),
             ime: Reg::new(),
-        }
-    }
-
-    pub fn init(&mut self, debug: bool) {
-        self.af.set_16(0x01b0);
-        self.bc.set_16(0x0013);
-        self.de.set_16(0x00d8);
-        self.hl.set_16(0x014d);
-        self.pc.set_16(if debug { 0x100 } else { 0x0 });
-        self.sp.set_16(0xfffe);
+            halt: false,
+        };
+        result.af.set_16(0x01b0);
+        result.bc.set_16(0x0013);
+        result.de.set_16(0x00d8);
+        result.hl.set_16(0x014d);
+        result.pc.set_16(0x0);
+        result.sp.set_16(0xfffe);
+        result
     }
 
     pub fn spe_to_str(&self, m: My) -> String {

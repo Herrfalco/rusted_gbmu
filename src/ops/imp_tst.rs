@@ -312,7 +312,7 @@ fn rot_sh() {
 #[test]
 fn cb_rot() {
     let mut mem = Mem::new("");
-    let mut hl = Reg::new();
+    let hl = Reg::new();
     let mut af = Reg::new();
     let mut af2 = Reg::new();
     let mut bc = Reg::new();
@@ -366,7 +366,7 @@ fn cb_rot() {
 #[test]
 fn sh_bit() {
     let mut mem = Mem::new("");
-    let mut hl = Reg::new();
+    let hl = Reg::new();
     let mut af = Reg::new();
     let mut af2 = Reg::new();
     let mut bc = Reg::new();

@@ -732,7 +732,8 @@ pub fn stop(m: MMy) -> bool {
     true
 }
 
-pub fn halt() -> bool {
+pub fn halt(r: &mut bool) -> bool {
+    *r = true;
     true
 }
 
