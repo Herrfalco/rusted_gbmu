@@ -24,7 +24,7 @@ use std::path::Path;
 use timer::*;
 use utils::*;
 
-const DEBUG: bool = true;
+const DEBUG: bool = false;
 
 fn read_opcode(mem: My, pc: RR) -> (u8, u8) {
     (mem.su_get(grr(pc)), mem.su_get(grr(pc).wrapping_add(1)))
@@ -130,7 +130,7 @@ fn main() {
                         dec_rr(&mut regs.ime);
                     }
                 } else {
-                    cycles = 1;
+                    cycles = 4;
                 }
             }
             timer.update(&mut mem, cycles);
