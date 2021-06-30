@@ -57,6 +57,7 @@ pub struct MBC1 {
     ram_sz: usize,
     ram_nb: usize,
     ram_en: bool,
+    adv_mod: bool,
 }
 
 impl Drop for MBC1 {
@@ -82,6 +83,7 @@ impl MBC for MBC1 {
             ram_sz: 0,
             ram_nb: 0x0,
             ram_en: false,
+            adv_mod: false,
         });
         let mut file = File::open(path).unwrap_or_else(|_| fatal_err("Can't open rom", 99));
 
@@ -97,10 +99,26 @@ impl MBC for MBC1 {
 
     fn get(&self, addr: u16) -> Option<u8> {
         match addr {
-            0x4000..=0x7fff => Some(self.rom[addr as usize - 0x4000 + self.rom_nb * 0x4000]),
-            0xa000..=0xbfff if self.ram_sz != 0 && self.ram_en => {
-                Some(self.ram[addr as usize - 0xa000 + self.ram_nb * 0x2000])
+            0x0000..=0x3fff if self.rom_sz > 4 && self.adv_mod => {
+                Some(self.rom[addr as usize + (self.ram_nb << 5) * 0x4000])
             }
+            0x4000..=0x7fff => Some(
+                self.rom[addr as usize - 0x4000
+                    + (if self.rom_sz > 0x4 {
+                        self.ram_nb << 5
+                    } else {
+                        0
+                    } | self.rom_nb)
+                        * 0x4000],
+            ),
+            0xa000..=0xbfff if self.ram_sz != 0 && self.ram_en => Some(
+                self.ram[addr as usize - 0xa000
+                    + if self.ram_sz > 2 && !self.adv_mod {
+                        0
+                    } else {
+                        self.ram_nb
+                    } * 0x2000],
+            ),
             _ => None,
         }
     }
@@ -118,6 +136,12 @@ impl MBC for MBC1 {
             }
             0x4000..=0x5fff if self.ram_sz != 0 => {
                 self.ram_nb = val as usize & 0x3;
+                if self.ram_sz < 3 {
+                    self.ram_nb = 0;
+                }
+            }
+            0x6000..=0x7fff => {
+                self.adv_mod = val & 0x1 != 0;
             }
             0xa000..=0xbfff if self.ram_sz != 0 => {
                 if self.ram_en {

@@ -24,7 +24,7 @@ use std::path::Path;
 use timer::*;
 use utils::*;
 
-const DEBUG: bool = false;
+const DEBUG: bool = true;
 
 fn read_opcode(mem: My, pc: RR) -> (u8, u8) {
     (mem.su_get(grr(pc)), mem.su_get(grr(pc).wrapping_add(1)))
@@ -95,6 +95,7 @@ fn main() {
         let mut tmp: u16;
         let mut cycles: usize;
         let mut boot_rom = true;
+        let mut halt_bug = false;
         loop {
             if boot_rom && grr(&regs.pc) == 0x100 {
                 if let Err(_) = mem.load_rom(0x100, Path::new(&args[0])) {
@@ -103,6 +104,9 @@ fn main() {
                 boot_rom = false;
             }
             if ((mem.su_get(IE) & 0x1f) & (mem.su_get(IF) & 0x1f)) != 0 && regs.halt {
+                if grr(&regs.ime) == 0 {
+                    halt_bug = true;
+                }
                 regs.halt = false;
             }
             if grr(&regs.ime) == 1 && ((mem.su_get(IE) & 0x1f) & (mem.su_get(IF) & 0x1f)) != 0 {
@@ -112,14 +116,19 @@ fn main() {
                 if !regs.halt {
                     opcode = read_opcode(&mem, &mut regs.pc);
                     op = &ops.get(opcode).unwrap_or_else(|| {
-                        fatal_err(&format!("Opcode 0x{:02x} not implemented", opcode.0), 3)
+                        fatal_err(&format!("Unknown opcode 0x{:02x}", opcode.0), 3)
                     });
                     param = read_param(&mem, &mut regs.pc, op.len());
                     if !dbg.run(&mut mem, &mut regs, op, param) {
                         reset = true;
                         break;
                     }
-                    tmp = grr(&regs.pc).wrapping_add(op.len() as u16);
+                    tmp = grr(&regs.pc).wrapping_add(op.len().wrapping_sub(if halt_bug {
+                        halt_bug = false;
+                        1
+                    } else {
+                        0
+                    }) as u16);
                     srr(&mut regs.pc, tmp);
                     cycles = if op.exec(&mut regs, &mut mem, param) {
                         op.cycles.0
