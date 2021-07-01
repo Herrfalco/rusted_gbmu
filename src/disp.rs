@@ -317,6 +317,8 @@ impl Display {
 
     fn lcd_off(&mut self, m: MMy, cy: usize) {
         if cy >= self.off_cy {
+            self.update_ly(m, ModFlag::Res, ModFlag::Res);
+            self.state = Display::update_stat(m, State::HBlank);
             self.win
                 .update_with_buffer(&vec![COLORS[0]; LCD_W * LCD_H], LCD_W, LCD_H)
                 .unwrap();
