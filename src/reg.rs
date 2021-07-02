@@ -274,17 +274,19 @@ mod tests {
     fn regs() {
         let mut regs = Regs::new();
 
-        assert_eq!(regs.af.get_16(), 0);
+        assert_eq!(regs.af.get_16(), 0x01b0);
         regs.af.set_8(U, 0xff);
-        assert_eq!(regs.af.get_16(), 0xff00);
+        assert_eq!(regs.af.get_16(), 0xffb0);
+        regs.af.set_8(D, 0x00);
         assert_eq!(regs.af.get_8(U), 0xff);
         assert_eq!(regs.af.get_bit(Z), false);
         regs.af.set_bit(Z, true);
         assert_eq!(regs.af.get_bit(Z), true);
         regs.af.set_bit(Z, false);
         assert_eq!(regs.af.get_bit(Z), false);
-        assert_eq!(regs.sp.get_8(D), 0);
+        assert_eq!(regs.sp.get_8(D), 0xfe);
         regs.sp.set_8(D, 0xff);
+        regs.sp.set_8(U, 0x00);
         assert_eq!(regs.sp.get_16(), 0xff);
         assert_eq!(regs.sp.get_8(D), 0xff);
     }
